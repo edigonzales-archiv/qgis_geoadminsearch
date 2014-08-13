@@ -11,18 +11,18 @@ from qgis.gui import *
 import json
 import sys
 import traceback
+import traceback
+import collections
 
+from collections import OrderedDict
 
 class SuggestCompletion(QLineEdit, QWidget):
-    
     def __init__(self, parent):
         QLineEdit.__init__(self, parent)
 
-        self.settings = QSettings("CatAIS","SogisSuche")
+        self.settings = QSettings("CatAIS","GeoAdminSearch")
         
-#        self.SUGGEST_URL = "http://google.com/complete/search?output=toolbar&q=%1"
-#        self.SUGGEST_URL = "http://www.sogis1.so.ch/wsgi/search.wsgi?searchtables=&query=%1"
-        self.SUGGEST_URL = "http://www.sogis1.so.ch/wsgi/search.wsgi?query=%1&searchtables=%2"
+        self.SUGGEST_URL = "http://api3.geo.admin.ch/rest/services/api/SearchServer?type=locations&searchText="
 
         self.popup = QTreeWidget()
         self.popup.setWindowFlags(Qt.Popup);
@@ -50,7 +50,6 @@ class SuggestCompletion(QLineEdit, QWidget):
         self.timer.setInterval(500);
         self.connect(self.timer, SIGNAL("timeout()"), self.autoSuggest);
         self.connect(self, SIGNAL("textEdited(QString)"), self.timer.start)
-        # kann man das ähnlich wie im weblient machen? falls gbnr zu beginn dann nur grundstücke suchen etc? -> timer wieder stoppen und was es noch braucht?!
         
         self.networkManager = QNetworkAccessManager(self)
         self.connect(self.networkManager, SIGNAL("finished(QNetworkReply*)"), self.handleNetworkData)
@@ -148,10 +147,12 @@ class SuggestCompletion(QLineEdit, QWidget):
             searchTables = searchTables[:-1]
         self.settings.endArray();
     
-        str = self.text()
-        url = QString(self.SUGGEST_URL).arg(str).arg(searchTables)
-#        print url
-        self.networkManager.get(QNetworkRequest(QUrl(url)))
+        searchString = self.text()
+        url = str(self.SUGGEST_URL) + searchString
+        print url
+        request = QNetworkRequest(QUrl(url))
+        request.setRawHeader("Referer", "http://localhost")
+        self.networkManager.get(request)
         
     def preventRequest(self):
         self.timer.stop()
@@ -165,37 +166,45 @@ class SuggestCompletion(QLineEdit, QWidget):
             searchTables = []
             
             response = networkReply.readAll()
+            
+            print response
                         
-            # Wie siehts mit dem sortieren aus? Ist das jetzt Kraut und Rüben oder bleibt das so wie
-            # es im String ist?
-            # Gemäss Internet ist es wirklich unordered...
-            # scheint aber hier momentan geordnet zu sein.
+
             try:
                 my_response = unicode(response)
-                json_response = json.loads(my_response) 
+#                json_response = json.loads(my_response) 
+                json_response = json.loads(my_response, object_pairs_hook=collections.OrderedDict) 
+                
             except Exception:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                QMessageBox.critical(None, "SogisSuche", "Failed to load json reponse" + str(traceback.format_exc(exc_traceback)))                                    
+                QMessageBox.critical(None, "GeoAdminSearch", "Failed to load json reponse" + str(traceback.format_exc(exc_traceback)))                                    
                 return
-            
+                
+#            print json_response
+                
             for result in json_response['results']:
-#                print result['displaytext']
-                searchtable = result['searchtable']
-                
-#                print searchtable
-                
-                # Die "Titel"-Texte (z.B. Gemeinde, Flurnamen, etc.) haben keinen Searchtable.
-                if not searchtable:
-                    result_type = result['displaytext'] # z.B. Gemeinde. Bedingt aber dass diese IMMER vor den Resultaten mit dem Typ kommen.
-                    continue
-                
-                displaytext = result['displaytext']
-                choices.append(unicode(result['displaytext']))
-                hits.append(unicode(result_type))
-                searchTables.append(searchtable)
+                print result['attrs']['geom_st_box2d']
             
-            self.showCompletion(choices, hits, searchTables)
-        networkReply.deleteLater()
+            
+            
+#            for result in json_response['results']:
+##                print result['displaytext']
+#                searchtable = result['searchtable']
+#                
+##                print searchtable
+#                
+#                # Die "Titel"-Texte (z.B. Gemeinde, Flurnamen, etc.) haben keinen Searchtable.
+#                if not searchtable:
+#                    result_type = result['displaytext'] # z.B. Gemeinde. Bedingt aber dass diese IMMER vor den Resultaten mit dem Typ kommen.
+#                    continue
+#                
+#                displaytext = result['displaytext']
+#                choices.append(unicode(result['displaytext']))
+#                hits.append(unicode(result_type))
+#                searchTables.append(searchtable)
+#            
+#            self.showCompletion(choices, hits, searchTables)
+#        networkReply.deleteLater()
         
     def foo(self):
         print "foobar"

@@ -72,7 +72,7 @@ class GeoAdminSearch:
         QObject.connect(self.action, SIGNAL("triggered()"), self.run)
 
         # Add toolbar button and menu item
-        self.iface.addToolBarIcon(self.action)
+#        self.iface.addToolBarIcon(self.action)
         self.iface.addPluginToMenu(u"&GeoAdmin Search", self.action)
         
         # Create own toolbar
@@ -81,21 +81,15 @@ class GeoAdminSearch:
                 
         emptyWidget = QWidget(self.toolBar)
         toolBarLayout = QHBoxLayout(emptyWidget)
-        toolBarLayout.setMargin(1)
+        toolBarLayout.setMargin(2)
         
         self.suggest = SuggestCompletion(emptyWidget)
         self.suggest.setMinimumWidth(600);
         toolBarLayout.addWidget(self.suggest)
-        
-        self.toolButtonReset = QToolButton(emptyWidget)
-        self.toolButtonReset.setIcon(QIcon(':/plugins/geoadminsearch/icons/reset.png'))
-        
-        toolBarLayout.addWidget(self.toolButtonReset)
-        
+                
         emptyWidget.setLayout(toolBarLayout)
         self.toolBar.addWidget(emptyWidget)
 
-        QObject.connect(self.toolButtonReset, SIGNAL("clicked()"), self.resetSuggest)
         QObject.connect(self.suggest, SIGNAL("searchEnterered(QString, QString)"), self.getSearchGeometry)
         
     def resetSuggest(self):
