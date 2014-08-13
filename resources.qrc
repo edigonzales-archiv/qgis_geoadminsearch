@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/plugins/geoadminsearch" >
+        <file>icons/icon.png</file>
+    </qresource>
+    <qresource prefix="/plugins/geoadminsearch" >
+        <file>icons/reset.svg</file>
+    </qresource>    
+    <qresource prefix="/plugins/geoadminsearch" >
+        <file>icons/reset.png</file>
+    </qresource>    
+</RCC>

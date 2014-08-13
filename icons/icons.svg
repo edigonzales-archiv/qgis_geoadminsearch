@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="744.09448819"
+   height="1052.3622047"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.3.1 r9886"
+   sodipodi:docname="icons.svg">
+  <defs
+     id="defs4" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.7"
+     inkscape:cx="-209.20128"
+     inkscape:cy="407.68317"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1281"
+     inkscape:window-height="907"
+     inkscape:window-x="49"
+     inkscape:window-y="222"
+     inkscape:window-maximized="0" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       inkscape:export-ydpi="9.4799995"
+       inkscape:export-xdpi="9.4799995"
+       inkscape:export-filename="/home/stefan/.qgis/python/plugins/cadtools/icons/showazimuth.png"
+       transform="matrix(2.2884887,0.68946949,-0.68946949,2.2884887,438.12476,-1168.5063)"
+       d="m 241.19234,728.0835 a 8.0666332,8.0666332 0 1 1 -16.13327,0 8.0666332,8.0666332 0 1 1 16.13327,0 z"
+       sodipodi:ry="8.0666332"
+       sodipodi:rx="8.0666332"
+       sodipodi:cy="728.0835"
+       sodipodi:cx="233.1257"
+       id="path3328-0-3-7"
+       style="fill:#c8e6fa;fill-opacity:1;stroke:#559ccf;stroke-width:4.23113489;stroke-miterlimit:4;stroke-opacity:0.98823529;stroke-dasharray:none"
+       sodipodi:type="arc" />
+    <path
+       sodipodi:type="arc"
+       style="fill:#00baff;fill-opacity:1"
+       id="path3006"
+       sodipodi:cx="152.85715"
+       sodipodi:cy="342.36218"
+       sodipodi:rx="58.57143"
+       sodipodi:ry="58.57143"
+       d="m 211.42858,342.36218 a 58.57143,58.57143 0 1 1 -117.142863,0 58.57143,58.57143 0 1 1 117.142863,0 z" />
+    <text
+       xml:space="preserve"
+       style="font-size:102.95258331px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Cadastra;-inkscape-font-specification:Cadastra Bold"
+       x="133.99867"
+       y="380.9057"
+       id="text3776"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3778"
+         x="133.99867"
+         y="380.9057">i</tspan></text>
+    <path
+       sodipodi:type="arc"
+       style="fill:#00ffff;stroke:#0000ff;stroke-width:5.37037038999999972;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="path3780"
+       sodipodi:cx="111.62186"
+       sodipodi:cy="165.95332"
+       sodipodi:rx="14.647212"
+       sodipodi:ry="14.647212"
+       d="m 126.26907,165.95332 a 14.647212,14.647212 0 1 1 -29.294425,0 14.647212,14.647212 0 1 1 29.294425,0 z"
+       transform="matrix(1.862069,0,0,1.862069,-53.294255,-137.50737)" />
+    <path
+       sodipodi:type="arc"
+       style="fill:#c8e6fa;fill-opacity:1;stroke:#2b5d7f;stroke-width:4.23113489;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="path3218-0-4-4-0"
+       sodipodi:cx="233.1257"
+       sodipodi:cy="728.0835"
+       sodipodi:rx="8.0666332"
+       sodipodi:ry="8.0666332"
+       d="m 241.19234,728.0835 a 8.0666332,8.0666332 0 1 1 -16.13327,0 8.0666332,8.0666332 0 1 1 16.13327,0 z"
+       transform="matrix(1.9367034,-1.401273,1.401273,1.9367034,-1167.5335,-330.34773)"
+       inkscape:export-filename="/home/stefan/Documents/freeframe.png"
+       inkscape:export-xdpi="9.4799995"
+       inkscape:export-ydpi="9.4799995" />
+    <path
+       sodipodi:type="arc"
+       style="fill:#c8e6fa;fill-opacity:1;stroke:#2b5d7f;stroke-width:4.23113489;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="path3218-0-4-4-4-2"
+       sodipodi:cx="233.1257"
+       sodipodi:cy="728.0835"
+       sodipodi:rx="8.0666332"
+       sodipodi:ry="8.0666332"
+       d="m 241.19234,728.0835 a 8.0666332,8.0666332 0 1 1 -16.13327,0 8.0666332,8.0666332 0 1 1 16.13327,0 z"
+       transform="matrix(1.9367034,-1.401273,1.401273,1.9367034,-1193.1502,-509.26747)"
+       inkscape:export-filename="/home/stefan/Documents/freeframe.png"
+       inkscape:export-xdpi="9.4799995"
+       inkscape:export-ydpi="9.4799995" />
+    <rect
+       style="fill:none;stroke:none;stroke-width:0.94099997999999996;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect3201-1-2"
+       width="228.57231"
+       height="229.40024"
+       x="-424.85028"
+       y="314.29852"
+       ry="0"
+       inkscape:export-filename="/home/stefan/.qgis/python/plugins/SogisSuche/icons/reset.png"
+       inkscape:export-xdpi="9.4799995"
+       inkscape:export-ydpi="9.4799995" />
+    <path
+       inkscape:export-ydpi="9.4799995"
+       inkscape:export-xdpi="9.4799995"
+       inkscape:export-filename="/home/stefan/.qgis/python/plugins/cadtools-devel/icons/selectvertexandsegment.png"
+       transform="matrix(2.3904782,0,0,2.3904782,-298.71048,-1066.677)"
+       d="m 241.19234,728.0835 a 8.0666332,8.0666332 0 1 1 -16.13327,0 8.0666332,8.0666332 0 1 1 16.13327,0 z"
+       sodipodi:ry="8.0666332"
+       sodipodi:rx="8.0666332"
+       sodipodi:cy="728.0835"
+       sodipodi:cx="233.1257"
+       id="path2515"
+       style="fill:#c8e6fa;fill-opacity:1;stroke:#ff0000;stroke-width:4.23113489;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       sodipodi:type="arc" />
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot3807"
+       style="fill:black;stroke:none;stroke-opacity:1;stroke-width:1px;stroke-linejoin:miter;stroke-linecap:butt;fill-opacity:1;font-family:CadastraCondensed;font-style:normal;font-weight:bold;font-size:40px;line-height:125%;letter-spacing:0px;word-spacing:0px;-inkscape-font-specification:CadastraCondensed Bold;font-stretch:normal;font-variant:normal"><flowRegion
+         id="flowRegion3809"><rect
+           id="rect3811"
+           width="360"
+           height="61.42857"
+           x="-387.14285"
+           y="732.36218" /></flowRegion><flowPara
+         id="flowPara3813" /></flowRoot>    <path
+       sodipodi:type="arc"
+       style="fill:#c8e6fa;fill-opacity:1;stroke:#2b5d7f;stroke-width:4.23113489;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="path3218-0-9-9"
+       sodipodi:cx="233.1257"
+       sodipodi:cy="728.0835"
+       sodipodi:rx="8.0666332"
+       sodipodi:ry="8.0666332"
+       d="m 241.19234,728.0835 a 8.0666332,8.0666332 0 1 1 -16.13327,0 8.0666332,8.0666332 0 1 1 16.13327,0 z"
+       transform="matrix(1.9367034,-1.401273,1.401273,1.9367034,-1344.5962,-419.61828)"
+       inkscape:export-filename="/home/stefan/Documents/freeframe.png"
+       inkscape:export-xdpi="9.4799995"
+       inkscape:export-ydpi="9.4799995" />
+    <path
+       inkscape:export-ydpi="9.4799995"
+       inkscape:export-xdpi="9.4799995"
+       inkscape:export-filename="/home/stefan/.qgis/python/plugins/cadtools-devel/icons/selectvertexandsegment.png"
+       transform="matrix(2.3904782,0,0,2.3904782,-428.71048,-1165.2484)"
+       d="m 241.19234,728.0835 a 8.0666332,8.0666332 0 1 1 -16.13327,0 8.0666332,8.0666332 0 1 1 16.13327,0 z"
+       sodipodi:ry="8.0666332"
+       sodipodi:rx="8.0666332"
+       sodipodi:cy="728.0835"
+       sodipodi:cx="233.1257"
+       id="path2515-0"
+       style="fill:#c8e6fa;fill-opacity:1;stroke:#ff0000;stroke-width:4.23113489;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       sodipodi:type="arc" />
+    <path
+       inkscape:export-ydpi="9.4799995"
+       inkscape:export-xdpi="9.4799995"
+       inkscape:export-filename="/home/stefan/.qgis/python/plugins/cadtools-devel/icons/selectvertexandsegment.png"
+       transform="matrix(2.3904782,0,0,2.3904782,-385.85334,-986.67696)"
+       d="m 241.19234,728.0835 a 8.0666332,8.0666332 0 1 1 -16.13327,0 8.0666332,8.0666332 0 1 1 16.13327,0 z"
+       sodipodi:ry="8.0666332"
+       sodipodi:rx="8.0666332"
+       sodipodi:cy="728.0835"
+       sodipodi:cx="233.1257"
+       id="path2515-6"
+       style="fill:#c8e6fa;fill-opacity:1;stroke:#ff0000;stroke-width:4.23113489;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       sodipodi:type="arc" />
+    <rect
+       style="fill:none;stroke:#000000;stroke-width:0.94099998;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect3201-1-2-8"
+       width="228.57231"
+       height="229.40024"
+       x="425.71384"
+       y="569.09064"
+       ry="0"
+       inkscape:export-filename="/home/stefan/Pictures/ortho1.png"
+       inkscape:export-xdpi="9.4799995"
+       inkscape:export-ydpi="9.4799995" />
+    <path
+       sodipodi:type="arc"
+       style="fill:none;stroke:#ff0000;stroke-width:10.65186509;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="path3972"
+       sodipodi:cx="473.57144"
+       sodipodi:cy="481.64789"
+       sodipodi:rx="96.428574"
+       sodipodi:ry="96.428574"
+       d="m 570.00002,481.64789 a 96.428574,96.428574 0 1 1 -192.85715,0 96.428574,96.428574 0 1 1 192.85715,0 z"
+       transform="matrix(1.032683,0,0,1.032683,38.093682,198.90115)" />
+    <path
+       inkscape:export-ydpi="9.4799995"
+       inkscape:export-xdpi="9.4799995"
+       inkscape:export-filename="/home/stefan/.qgis/python/plugins/cadtools/icons/showazimuth.png"
+       transform="matrix(3.0555176,0.92055783,-0.92055782,3.0555176,400.42326,-1926.2012)"
+       d="m 241.19234,728.0835 a 8.0666332,8.0666332 0 1 1 -16.13327,0 8.0666332,8.0666332 0 1 1 16.13327,0 z"
+       sodipodi:ry="8.0666332"
+       sodipodi:rx="8.0666332"
+       sodipodi:cy="728.0835"
+       sodipodi:cx="233.1257"
+       id="path3328-0-3-7-3"
+       style="fill:#c8e6fa;fill-opacity:1;stroke:#559ccf;stroke-width:4.23113489;stroke-miterlimit:4;stroke-opacity:0.98823529;stroke-dasharray:none"
+       sodipodi:type="arc" />
+    <path
+       sodipodi:type="arc"
+       style="fill:#c8e6fa;fill-opacity:1;stroke:#2b5d7f;stroke-width:4.23113489;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="path3218-0-4-4-0-3"
+       sodipodi:cx="233.1257"
+       sodipodi:cy="728.0835"
+       sodipodi:rx="8.0666332"
+       sodipodi:ry="8.0666332"
+       d="m 241.19234,728.0835 a 8.0666332,8.0666332 0 1 1 -16.13327,0 8.0666332,8.0666332 0 1 1 16.13327,0 z"
+       transform="matrix(1.9367034,-1.401273,1.401273,1.9367034,-942.59619,-388.76114)"
+       inkscape:export-filename="/home/stefan/Documents/freeframe.png"
+       inkscape:export-xdpi="9.4799995"
+       inkscape:export-ydpi="9.4799995" />
+    <path
+       inkscape:export-ydpi="9.4799995"
+       inkscape:export-xdpi="9.4799995"
+       inkscape:export-filename="/home/stefan/.qgis/python/plugins/cadtools/icons/showazimuth.png"
+       transform="matrix(2.2884887,0.68946949,-0.68946949,2.2884887,597.77154,-1233.1531)"
+       d="m 241.19234,728.0835 a 8.0666332,8.0666332 0 1 1 -16.13327,0 8.0666332,8.0666332 0 1 1 16.13327,0 z"
+       sodipodi:ry="8.0666332"
+       sodipodi:rx="8.0666332"
+       sodipodi:cy="728.0835"
+       sodipodi:cx="233.1257"
+       id="path3328-0-3-7-4"
+       style="fill:#c8e6fa;fill-opacity:1;stroke:#559ccf;stroke-width:4.23113489;stroke-miterlimit:4;stroke-opacity:0.98823529;stroke-dasharray:none"
+       sodipodi:type="arc" />
+    <rect
+       style="fill:none;stroke:#000000;stroke-width:0.94099998;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect3201-1-2-1"
+       width="228.57231"
+       height="229.40024"
+       x="-248.57187"
+       y="803.37634"
+       ry="0"
+       inkscape:export-filename="/home/stefan/Pictures/ortho1.png"
+       inkscape:export-xdpi="9.4799995"
+       inkscape:export-ydpi="9.4799995" />
+    <path
+       style="fill:#2b5d7f;fill-opacity:1;stroke:#2b5d7f;stroke-width:10;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       d="M -246.87596,1029.0823 -108.34811,815.58774"
+       id="path3021"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#2b5d7f;stroke-width:10;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       d="m -170.84428,831.28024 67.56128,-21.09681 3.953954,67.24438"
+       id="path4235"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccc" />
+    <path
+       style="fill:none;stroke:#ff0000;stroke-width:10;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       d="m -127.7843,979.12612 107.076172,0"
+       id="path4237"
+       inkscape:connector-curvature="0" />
+    <path
+       style="fill:none;stroke:#ff0000;stroke-width:10;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       d="m -71.215754,1032.6642 0,-107.07616"
+       id="path4237-3"
+       inkscape:connector-curvature="0" />
+    <path
+       sodipodi:type="arc"
+       style="fill:#ff0000;fill-opacity:1;stroke:none"
+       id="path3008"
+       sodipodi:cx="-690"
+       sodipodi:cy="450.93362"
+       sodipodi:rx="64.285713"
+       sodipodi:ry="64.285713"
+       d="m -625.71429,450.93362 a 64.285713,64.285713 0 1 1 -128.57142,0 64.285713,64.285713 0 1 1 128.57142,0 z"
+       transform="matrix(1.4555555,0,0,1.4555555,693.61906,-227.56818)" />
+    <text
+       xml:space="preserve"
+       style="font-size:139.62297058px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Futura;-inkscape-font-specification:Futura Bold"
+       x="-363.75076"
+       y="480.58923"
+       id="text3009"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3011"
+         x="-363.75076"
+         y="480.58923">X</tspan></text>
+  </g>
+</svg>

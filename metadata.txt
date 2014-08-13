@@ -1,0 +1,38 @@
+# This file contains metadata for your plugin. Beginning
+# with version 1.8 this is the preferred way to supply information about a
+# plugin. The current method of embedding metadata in __init__.py will
+# be supported until version 2.0
+
+# This file should be included when you package your plugin.
+
+# Mandatory items:
+
+
+[general]
+name=GeoAdmin Search
+qgisMinimumVersion=2.4
+description=GeoAdmin Search Plugin
+version=0.1
+author=Stefan Ziegler
+email=stefan.ziegler.de@gmail.com
+
+# end of mandatory metadata
+
+# Optional items:
+
+# Uncomment the following line and add your changelog entries:
+# changelog=
+
+# tags are comma separated with spaces allowed
+tags=
+
+homepage=https://bitbucket.org/edigonzales/qgis_geoadminsearch/wiki/Home
+tracker=https://bitbucket.org/edigonzales/qgis_geoadminsearch/issues
+repository=https://bitbucket.org/edigonzales/qgis_geoadminsearch/overview
+icon=icon.png
+# experimental flag
+experimental=False
+
+# deprecated flag (applies to the whole plugin, not just a single version
+deprecated=False
+
