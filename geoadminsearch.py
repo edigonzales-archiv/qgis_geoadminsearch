@@ -113,7 +113,7 @@ class GeoAdminSearch:
         self.toolBar.addWidget(emptyWidget)
 
         QObject.connect(self.toolButtonReset, SIGNAL("clicked()"), self.resetSuggest)
-        QObject.connect(self.suggest, SIGNAL("searchEnterered(QString, QString)"), self.getSearchGeometry)
+        QObject.connect(self.suggest, SIGNAL("searchEnterered(QString, QVariant)"), self.processResult)
         
     def resetSuggest(self):
         self.suggest.clear()
@@ -122,14 +122,18 @@ class GeoAdminSearch:
         searchType = self.comboSearchType.itemData(idx)
         self.settings.setValue("searchtype", searchType)
 
-    def getSearchGeometry(self, item, searchTable):
-        GEOM_URL = "http://www.sogis1.so.ch/wsgi/getSearchGeom.wsgi?searchtable=%1&displaytext=%2"
-        url = QString(GEOM_URL).arg(searchTable).arg(item)
-#        print unicode(url)
-    
-        self.networkAccess = QNetworkAccessManager()         
-        QObject.connect(self.networkAccess, SIGNAL("finished(QNetworkReply*)"), self.receiveGeometry)
-        self.networkAccess.get(QNetworkRequest(QUrl(url))) 
+    def processResult(self, item, data):
+        print data
+        # wie unterscheidet man am einfachsten was es ist? layer, feature, location? dict bei locations versch. keys zum gleichen value, z.B. address -> location, parcel -> location etc.
+        # -> processLocation
+        # -> process Layer...
+#        GEOM_URL = "http://www.sogis1.so.ch/wsgi/getSearchGeom.wsgi?searchtable=%1&displaytext=%2"
+#        url = QString(GEOM_URL).arg(searchTable).arg(item)
+##        print unicode(url)
+#    
+#        self.networkAccess = QNetworkAccessManager()         
+#        QObject.connect(self.networkAccess, SIGNAL("finished(QNetworkReply*)"), self.receiveGeometry)
+#        self.networkAccess.get(QNetworkRequest(QUrl(url))) 
        
     def receiveGeometry(self, networkReply): 
         bytes = networkReply.readAll()

@@ -43,8 +43,15 @@ class SettingsDialog(QDialog, Ui_Settings):
         self.connect(self.okButton, SIGNAL("accepted()"), self.accept)
         
         self.settings = QSettings("CatAIS","GeoAdminSearch")
-
+        
     def initGui(self):
+        QWidget.setTabOrder(self.lineEditUserName, self.lineEditPassword)
+                
+        userName = self.settings.value("options/username")
+        password = self.settings.value("options/password")
+        self.lineEditUserName.setText(userName) 
+        self.lineEditPassword.setText(password) 
+
         self.treeWidgetHeaders.clear()
         headerFields = self.settings.value("options/headerfields")
         headerValues = self.settings.value("options/headervalues")
@@ -55,7 +62,7 @@ class SettingsDialog(QDialog, Ui_Settings):
                 item = QTreeWidgetItem(header)
                 item.setFlags(item.flags() | Qt.ItemIsEditable)
                 self.treeWidgetHeaders.addTopLevelItem(item)
-    
+
     @pyqtSignature("on_btnAddHeader_clicked()")    
     def on_btnAddHeader_clicked(self):
         item = QTreeWidgetItem(self.treeWidgetHeaders)
@@ -69,7 +76,12 @@ class SettingsDialog(QDialog, Ui_Settings):
         if item:
             self.treeWidgetHeaders.takeTopLevelItem(self.treeWidgetHeaders.indexOfTopLevelItem(item))
     
-    def accept(self):      
+    def accept(self):    
+        userName = self.lineEditUserName.text()
+        password = self.lineEditPassword.text()
+        self.settings.setValue("options/username", userName)
+        self.settings.setValue("options/password", password)
+      
         headerFields = []
         headerValues = []
         nHeaders = self.treeWidgetHeaders.topLevelItemCount()

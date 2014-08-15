@@ -16,11 +16,24 @@ import collections
 
 from collections import OrderedDict
 
+try:
+    _encoding = QApplication.UnicodeUTF8
+    def _translate(context, text, disambig):
+        return QApplication.translate(context, text, disambig, _encoding)
+except AttributeError:
+    def _translate(context, text, disambig):
+        return QApplication.translate(context, text, disambig)
+
 class SuggestCompletion(QLineEdit, QWidget):
     def __init__(self, parent):
         QLineEdit.__init__(self, parent)
 
         self.settings = QSettings("CatAIS","GeoAdminSearch")
+        
+        self.origins = {'zipcode': _translate("GeoAdminSearch", "Zipcode",  None), 'gg25': _translate("GeoAdminSearch", "Administrative boundary",  None), 
+            'district': _translate("GeoAdminSearch", "District",  None), 'kantone': _translate("GeoAdminSearch", "Canton",  None),
+            'sn25': _translate("GeoAdminSearch", "Named location",  None), 'address': _translate("GeoAdminSearch", "Address",  None),
+            'parcel': _translate("GeoAdminSearch", "Parcel",  None)}
         
 #        self.SUGGEST_URL = "http://api3.geo.admin.ch/rest/services/api/SearchServer?type=" + searchType + "&searchText="
 
@@ -89,8 +102,8 @@ class SuggestCompletion(QLineEdit, QWidget):
             print "underlying..."
             return False
 
-    def showCompletion(self, choices, hits, searchTables):        
-        if len(choices) == 0:
+    def showCompletion(self, displaytext, origin, data):        
+        if len(displaytext) == 0:
             return False
         
         pal = self.palette()
@@ -99,13 +112,13 @@ class SuggestCompletion(QLineEdit, QWidget):
         self.popup.setUpdatesEnabled(False)
         self.popup.clear()
                 
-        for  i in range(len(choices)):
+        for  i in range(len(displaytext)):
             item = QTreeWidgetItem(self.popup)
-            item.setText(0, choices[i])
-            item.setText(1, hits[i])
+            item.setText(0, displaytext[i])
+            item.setText(1, origin[i])
             item.setTextAlignment(1, Qt.AlignRight)
             item.setTextColor(1, color)
-            item.setText(2, searchTables[i])
+            item.setData(2, Qt.UserRole, data[i])
             
         self.popup.setCurrentItem(self.popup.topLevelItem(0))
         self.popup.resizeColumnToContents(0)
@@ -113,9 +126,7 @@ class SuggestCompletion(QLineEdit, QWidget):
         self.popup.adjustSize()
         self.popup.setUpdatesEnabled(True)
         
-        h = self.popup.sizeHintForRow(0) * min(7, len(choices) + 3)
-#        print "width"
-#        print self.width()
+        h = self.popup.sizeHintForRow(0) * min(7, len(displaytext) + 3)
         self.popup.resize(self.width(), h)
         
         self.popup.move(self.mapToGlobal(QPoint(0, self.height())))
@@ -135,7 +146,7 @@ class SuggestCompletion(QLineEdit, QWidget):
 #            print item.text(1)
 #            print item.text(2)
             QMetaObject.invokeMethod(self, "returnPressed")
-            self.emit(SIGNAL("searchEnterered(QString, QString)"),  unicode(item.text(0)), item.text(2))
+            self.emit(SIGNAL("searchEnterered(QString, QVariant)"),  unicode(item.text(0)), item.data(2, Qt.UserRole))
         
     def autoSuggest(self):
         # search type and search url
@@ -147,16 +158,28 @@ class SuggestCompletion(QLineEdit, QWidget):
         # http headers
         headerFields = self.settings.value("options/headerfields")
         headerValues = self.settings.value("options/headervalues")
-        
         headers = []
         if headerFields and headerValues:
             for i in range(len(headerFields)):
                 headers.append([headerFields[i], headerValues[i]])
     
-        # complete search url
+        # complete search url 
+        # try to get the prefix/origins for location search
         searchString = self.text()
+        listSearchString = searchString.split(' ')
+
+        originPrefix = ""
+        if listSearchString[0] in self.origins.keys():
+            originPrefix += listSearchString[0]
+            searchString = ' '.join(listSearchString[1:])
+        
         url = str(suggestUrl) + searchString
+        
+        if originPrefix <> "":
+            url += "&origins=" + originPrefix.strip()
+
         print url
+
         request = QNetworkRequest(QUrl(url))
         for header in headers:
             request.setRawHeader(header[0], header[1])
@@ -166,36 +189,48 @@ class SuggestCompletion(QLineEdit, QWidget):
         self.timer.stop()
         
     def handleNetworkData(self, networkReply):
+        searchType = self.settings.value("searchtype", "locations")
+        
         url = networkReply.url()
         if not networkReply.error():
-            # TODO: Rename lists
-            choices = []
-            hits = []
-            searchTables = []
+            displaytext = []
+            type =  []
+            data = []
             
             response = networkReply.readAll()
-            
-
-            print response
-                        
-
+#            print response
+    
             try:
                 my_response = unicode(response)
-#                json_response = json.loads(my_response) 
                 json_response = json.loads(my_response, object_pairs_hook=collections.OrderedDict) 
                 
             except Exception:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                QMessageBox.critical(None, "GeoAdminSearch", "Failed to load json reponse" + str(traceback.format_exc(exc_traceback)))                                    
+                QMessageBox.critical(None, "GeoAdminSearch", "Failed to load json response" + str(traceback.format_exc(exc_traceback)))                                    
                 return
-                
-#            print json_response
-                
-#            for result in json_response['results']:
+                                
+            for result in json_response['results']:
+                attrs = result['attrs']
+#                print attrs
+#                print searchType
+                if searchType == 'locations':
+                    # ignore results without 'geom_st_box2d' key
+                    try:
+                        bbox = attrs['geom_st_box2d']
+                        label = attrs['label']
+                        label = label.replace('<b>', '').replace('</b>', '')
+                        displaytext.append(label)
+                        
+                        origin = attrs['origin']
+                        origin = self.origins[origin]
+                        type.append(origin)
+                        
+                        data.append(attrs)
+                    except:
+                        print 'no bbox found'
+                        pass
+
 #                print result['attrs']['geom_st_box2d']
-            
-            
-            
 #            for result in json_response['results']:
 ##                print result['displaytext']
 #                searchtable = result['searchtable']
@@ -208,12 +243,12 @@ class SuggestCompletion(QLineEdit, QWidget):
 #                    continue
 #                
 #                displaytext = result['displaytext']
-#                choices.append(unicode(result['displaytext']))
-#                hits.append(unicode(result_type))
+#                text.append(unicode(result['displaytext']))
+#                data.append(unicode(result_type))
 #                searchTables.append(searchtable)
 #            
-#            self.showCompletion(choices, hits, searchTables)
-#        networkReply.deleteLater()
+            self.showCompletion(displaytext, type, data)
+        networkReply.deleteLater()
         
     def foo(self):
         print "foobar"
