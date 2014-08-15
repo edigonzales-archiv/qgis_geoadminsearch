@@ -13,8 +13,11 @@
    height="229.39999"
    id="svg3025"
    version="1.1"
-   inkscape:version="0.48.3.1 r9886"
-   sodipodi:docname="New document 2">
+   inkscape:version="0.48.4 r9939"
+   sodipodi:docname="reset.svg"
+   inkscape:export-filename="/home/stefan/.qgis2/python/plugins/geoadminsearch/icons/reset.png"
+   inkscape:export-xdpi="9.4499998"
+   inkscape:export-ydpi="9.4499998">
   <defs
      id="defs3027" />
   <sodipodi:namedview
@@ -34,8 +37,8 @@
      fit-margin-left="0"
      fit-margin-right="0"
      fit-margin-bottom="0"
-     inkscape:window-width="513"
-     inkscape:window-height="406"
+     inkscape:window-width="1001"
+     inkscape:window-height="1157"
      inkscape:window-x="4"
      inkscape:window-y="136"
      inkscape:window-maximized="0" />
@@ -87,6 +90,7 @@
          sodipodi:role="line"
          id="tspan3011"
          x="418.24194"
-         y="686.80994">X</tspan></text>
+         y="686.80994"
+         style="-inkscape-font-specification:Cadastra Bold;font-family:Cadastra;font-weight:bold;font-style:normal;font-stretch:normal;font-variant:normal">X</tspan></text>
   </g>
 </svg>

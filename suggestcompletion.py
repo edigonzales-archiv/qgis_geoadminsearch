@@ -22,7 +22,7 @@ class SuggestCompletion(QLineEdit, QWidget):
 
         self.settings = QSettings("CatAIS","GeoAdminSearch")
         
-        self.SUGGEST_URL = "http://api3.geo.admin.ch/rest/services/api/SearchServer?type=locations&searchText="
+#        self.SUGGEST_URL = "http://api3.geo.admin.ch/rest/services/api/SearchServer?type=" + searchType + "&searchText="
 
         self.popup = QTreeWidget()
         self.popup.setWindowFlags(Qt.Popup);
@@ -138,20 +138,28 @@ class SuggestCompletion(QLineEdit, QWidget):
             self.emit(SIGNAL("searchEnterered(QString, QString)"),  unicode(item.text(0)), item.text(2))
         
     def autoSuggest(self):
-        # get additional search tables
-        searchTables = ""
-        size = self.settings.beginReadArray("options/searchtables")
-        for i in range(size):
-            self.settings.setArrayIndex(i)
-            searchTables += self.settings.value("type").toString() + ","
-            searchTables = searchTables[:-1]
-        self.settings.endArray();
+        # search type and search url
+        searchType = self.settings.value("searchtype", "locations")
+        print searchType        
+        suggestUrl = "http://api3.geo.admin.ch/rest/services/api/SearchServer?type=" + searchType + "&searchText="
+        print suggestUrl
+        
+        # http headers
+        headerFields = self.settings.value("options/headerfields")
+        headerValues = self.settings.value("options/headervalues")
+        
+        headers = []
+        if headerFields and headerValues:
+            for i in range(len(headerFields)):
+                headers.append([headerFields[i], headerValues[i]])
     
+        # complete search url
         searchString = self.text()
-        url = str(self.SUGGEST_URL) + searchString
+        url = str(suggestUrl) + searchString
         print url
         request = QNetworkRequest(QUrl(url))
-        request.setRawHeader("Referer", "http://localhost")
+        for header in headers:
+            request.setRawHeader(header[0], header[1])
         self.networkManager.get(request)
         
     def preventRequest(self):
@@ -167,6 +175,7 @@ class SuggestCompletion(QLineEdit, QWidget):
             
             response = networkReply.readAll()
             
+
             print response
                         
 
@@ -182,8 +191,8 @@ class SuggestCompletion(QLineEdit, QWidget):
                 
 #            print json_response
                 
-            for result in json_response['results']:
-                print result['attrs']['geom_st_box2d']
+#            for result in json_response['results']:
+#                print result['attrs']['geom_st_box2d']
             
             
             

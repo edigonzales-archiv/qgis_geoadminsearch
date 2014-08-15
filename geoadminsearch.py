@@ -27,6 +27,7 @@ from PyQt4.QtNetwork import QNetworkRequest
 from qgis.core import *
 from qgis.gui import *
 
+from settingsdialog import SettingsDialog
 from suggestcompletion import SuggestCompletion
 
 import resources_rc
@@ -42,6 +43,11 @@ except AttributeError:
 class GeoAdminSearch:
     def __init__(self, iface):
         self.iface = iface
+        self.canvas = self.iface.mapCanvas()
+        
+        self.settings = QSettings("CatAIS","GeoAdminSearch")
+        self.searchType = self.settings.value("searchtype", "locations")
+        
         self.plugin_dir = QFileInfo(QgsApplication.qgisUserDbFilePath()).path() + "/python/plugins/geoadminsearch"
 
         localePath = ""
@@ -56,14 +62,17 @@ class GeoAdminSearch:
 
             if qVersion() > '4.3.3':
                 QCoreApplication.installTranslator(self.translator)
+                
+        self.dlg = SettingsDialog(self.canvas)
+        self.dlg.initGui()
         
-        # Create Rubberband
-        self.rubberBand = QgsRubberBand(self.iface.mapCanvas(), True)
-        self.rubberBand.setColor(QColor(255, 0, 0))
-        self.rubberBand.setWidth(4)
-        
-        # VertexMarker
-        self.marker = None
+#        # Create Rubberband
+#        self.rubberBand = QgsRubberBand(self.iface.mapCanvas(), True)
+#        self.rubberBand.setColor(QColor(255, 0, 0))
+#        self.rubberBand.setWidth(4)
+#        
+#        # VertexMarker
+#        self.marker = None
 
     def initGui(self):
         # Create action that will start plugin configuration
@@ -86,20 +95,33 @@ class GeoAdminSearch:
         self.suggest = SuggestCompletion(emptyWidget)
         self.suggest.setMinimumWidth(600);
         toolBarLayout.addWidget(self.suggest)
-                
+        
+
+        self.toolButtonReset = QToolButton(emptyWidget)
+        self.toolButtonReset.setIcon(QIcon(':/plugins/geoadminsearch/icons/reset.png'))
+        toolBarLayout.addWidget(self.toolButtonReset)
+        
+        self.comboSearchType = QComboBox(self.toolBar)
+        self.comboSearchType.insertItem(0, _translate("GeoAdminSearch", "Locations",  None), "locations")
+        self.comboSearchType.addItem(_translate("GeoAdminSearch", "Layers",  None), "layers")
+        idx = self.comboSearchType.findData(self.searchType)
+        self.comboSearchType.setCurrentIndex(idx)
+        QObject.connect(self.comboSearchType, SIGNAL("currentIndexChanged(int)"), self.searchTypeChanged)        
+        toolBarLayout.addWidget(self.comboSearchType)
+        
         emptyWidget.setLayout(toolBarLayout)
         self.toolBar.addWidget(emptyWidget)
 
+        QObject.connect(self.toolButtonReset, SIGNAL("clicked()"), self.resetSuggest)
         QObject.connect(self.suggest, SIGNAL("searchEnterered(QString, QString)"), self.getSearchGeometry)
         
     def resetSuggest(self):
         self.suggest.clear()
         
-        self.rubberBand.reset(True)
-        
-        self.iface.mapCanvas().scene().removeItem(self.marker)  
-        self.marker = None
-        
+    def searchTypeChanged(self, idx):
+        searchType = self.comboSearchType.itemData(idx)
+        self.settings.setValue("searchtype", searchType)
+
     def getSearchGeometry(self, item, searchTable):
         GEOM_URL = "http://www.sogis1.so.ch/wsgi/getSearchGeom.wsgi?searchtable=%1&displaytext=%2"
         url = QString(GEOM_URL).arg(searchTable).arg(item)
@@ -168,4 +190,7 @@ class GeoAdminSearch:
         self.iface.mainWindow().removeToolBar(self.toolBar)
 
     def run(self):
-            pass
+            self.dlg.show()
+            result = self.dlg.exec_()
+            if result == 1:
+                pass

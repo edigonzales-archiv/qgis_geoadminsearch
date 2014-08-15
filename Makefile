@@ -35,7 +35,7 @@ PY_FILES = geoadminsearch.py geoadminsearchdialog.py __init__.py
 
 EXTRAS = icon.png 
 
-UI_FILES = ui_geoadminsearch.py
+UI_FILES = ui_settings.py
 
 RESOURCE_FILES = resources_rc.py
 
