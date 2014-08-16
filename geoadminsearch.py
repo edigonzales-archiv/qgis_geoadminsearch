@@ -62,17 +62,22 @@ class GeoAdminSearch:
 
             if qVersion() > '4.3.3':
                 QCoreApplication.installTranslator(self.translator)
-                
+        
+        # settings dialog
         self.dlg = SettingsDialog(self.canvas)
         self.dlg.initGui()
+        
+        # origins mapping dictionary
+        self.originsMap = {'zipcode':'locations', 'gg25':'locations', 'district':'locations', 'kantone':'locations', 'sn25':'locations', 'address':'locations', 'parcel':'locations', 'layer':'layers'}
+        
         
 #        # Create Rubberband
 #        self.rubberBand = QgsRubberBand(self.iface.mapCanvas(), True)
 #        self.rubberBand.setColor(QColor(255, 0, 0))
 #        self.rubberBand.setWidth(4)
-#        
-#        # VertexMarker
-#        self.marker = None
+
+        # VertexMarker
+        self.marker = None
 
     def initGui(self):
         # Create action that will start plugin configuration
@@ -103,6 +108,11 @@ class GeoAdminSearch:
         
         self.comboSearchType = QComboBox(self.toolBar)
         self.comboSearchType.insertItem(0, _translate("GeoAdminSearch", "Locations",  None), "locations")
+        
+        # Umbenennen in Maps -> MapServer
+        # Nein, layer suchen -> layer = layerboid in MapServer?
+        
+        
         self.comboSearchType.addItem(_translate("GeoAdminSearch", "Layers",  None), "layers")
         idx = self.comboSearchType.findData(self.searchType)
         self.comboSearchType.setCurrentIndex(idx)
@@ -118,23 +128,63 @@ class GeoAdminSearch:
     def resetSuggest(self):
         self.suggest.clear()
         
+        self.iface.mapCanvas().scene().removeItem(self.marker)  
+        self.marker = None
+        
     def searchTypeChanged(self, idx):
         searchType = self.comboSearchType.itemData(idx)
         self.settings.setValue("searchtype", searchType)
 
-    def processResult(self, item, data):
-        print data
-        # wie unterscheidet man am einfachsten was es ist? layer, feature, location? dict bei locations versch. keys zum gleichen value, z.B. address -> location, parcel -> location etc.
-        # -> processLocation
-        # -> process Layer...
-#        GEOM_URL = "http://www.sogis1.so.ch/wsgi/getSearchGeom.wsgi?searchtable=%1&displaytext=%2"
-#        url = QString(GEOM_URL).arg(searchTable).arg(item)
-##        print unicode(url)
-#    
-#        self.networkAccess = QNetworkAccessManager()         
-#        QObject.connect(self.networkAccess, SIGNAL("finished(QNetworkReply*)"), self.receiveGeometry)
-#        self.networkAccess.get(QNetworkRequest(QUrl(url))) 
-       
+    def processResult(self, item, data):        
+        resultType = self.originsMap[data['origin']]
+        
+        if resultType == "locations":
+            self.processLocation(item, data)
+        
+        
+    def processLocation(self, item, data):
+        bbox = data['geom_st_box2d']
+        print bbox
+        coords = bbox[4:-1].split(',')
+        min = coords[0].split(' ')
+        xmin = min[0]
+        ymin = min[1]
+        max = coords[1].split(' ')
+        xmax = max[0]        
+        ymax = max[1]
+        
+        # QgsRectangle cannot handle this.
+        if xmin == xmax or ymin == ymax:
+            point = QgsPoint(float(xmin), float(ymin))
+            geom = QgsGeometry().fromPoint(point)
+            
+            # create a marker only for point objects 
+            # since we only get the bbox and not the
+            # real geometry for polygons
+            self.canvas.scene().removeItem(self.marker)  
+            self.marker = None
+
+            self.marker = QgsVertexMarker(self.iface.mapCanvas())
+            self.marker.setIconType(3)
+            self.marker.setColor(QColor(255,0,0))
+            self.marker.setIconSize(20)
+            self.marker.setPenWidth (3)
+            self.marker.setCenter(geom.asPoint())
+            
+        else:
+            rect = QgsRectangle(float(xmin), float(ymin), float(xmax), float(ymax))
+            rect.scale(1.2)
+            geom = QgsGeometry().fromRect(rect)
+
+        # pan/zoom to result
+        bbox = geom.boundingBox() 
+        
+        self.iface.mapCanvas().setExtent(bbox)
+        self.iface.mapCanvas().refresh() 
+        
+        # Stop timer
+        self.suggest.preventRequest()
+        
     def receiveGeometry(self, networkReply): 
         bytes = networkReply.readAll()
         wkt = QString(bytes)
