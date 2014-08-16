@@ -34,16 +34,14 @@ class SuggestCompletion(QLineEdit, QWidget):
             'sn25': _translate("GeoAdminSearch", "Named location",  None), 'address': _translate("GeoAdminSearch", "Address",  None),
             'parcel': _translate("GeoAdminSearch", "Parcel",  None), 'layer': _translate("GeoAdminSearch", "Layer",  None)}
         
-#        self.SUGGEST_URL = "http://api3.geo.admin.ch/rest/services/api/SearchServer?type=" + searchType + "&searchText="
-
         self.popup = QTreeWidget()
         self.popup.setWindowFlags(Qt.Popup);
         self.popup.setFocusPolicy(Qt.NoFocus);
         self.popup.setFocusProxy(parent);
         self.popup.setMouseTracking(True);
         
-        self.popup.setColumnCount(3);
-        self.popup.hideColumn(2)
+        self.popup.setColumnCount(4);
+        self.popup.hideColumn(3)
         self.popup.setUniformRowHeights(True);
         self.popup.setRootIsDecorated(False);
         self.popup.setEditTriggers(QTreeWidget.NoEditTriggers)
@@ -101,7 +99,7 @@ class SuggestCompletion(QLineEdit, QWidget):
             print "underlying..."
             return False
 
-    def showCompletion(self, displaytext, origin, data):        
+    def showCompletion(self, displaytext, layername, origin, data):        
         if len(displaytext) == 0:
             return False
         
@@ -114,10 +112,14 @@ class SuggestCompletion(QLineEdit, QWidget):
         for  i in range(len(displaytext)):
             item = QTreeWidgetItem(self.popup)
             item.setText(0, displaytext[i])
-            item.setText(1, origin[i])
-            item.setTextAlignment(1, Qt.AlignRight)
-            item.setTextColor(1, color)
-            item.setData(2, Qt.UserRole, data[i])
+            try:
+                item.setText(1, layername[i])
+            except:
+                pass
+            item.setText(2, origin[i])
+            item.setTextAlignment(2, Qt.AlignRight)
+            item.setTextColor(2, color)
+            item.setData(3, Qt.UserRole, data[i])
             
         self.popup.setCurrentItem(self.popup.topLevelItem(0))
         self.popup.resizeColumnToContents(0)
@@ -141,11 +143,8 @@ class SuggestCompletion(QLineEdit, QWidget):
         item = self.popup.currentItem()
         if item:
             self.setText(item.text(0))
-#            print unicode(self.text())
-#            print item.text(1)
-#            print item.text(2)
             QMetaObject.invokeMethod(self, "returnPressed")
-            self.emit(SIGNAL("searchEnterered(QString, QVariant)"),  unicode(item.text(0)), item.data(2, Qt.UserRole))
+            self.emit(SIGNAL("searchEnterered(QString, QVariant)"),  unicode(item.text(0)), item.data(3, Qt.UserRole))
         
     def autoSuggest(self):
         # search type, language and search url
@@ -153,7 +152,8 @@ class SuggestCompletion(QLineEdit, QWidget):
         searchLanguage = self.settings.value("options/language", "de")
 
         if searchType == "layers":
-            suggestUrl = "http://api3.geo.admin.ch/rest/services/ech/SearchServer?lang=" + searchLanguage + "&type=" + searchType + "&searchText="
+            # Use mapserver search here since SearchServer does not know about availability of layer.
+            suggestUrl = "http://api3.geo.admin.ch/rest/services/api/MapServer?lang=" + searchLanguage + "&searchText="
         else: 
             suggestUrl = "http://api3.geo.admin.ch/rest/services/api/SearchServer?type=" + searchType + "&searchText="
             
@@ -178,7 +178,6 @@ class SuggestCompletion(QLineEdit, QWidget):
             searchString = ' '.join(listSearchString[1:])
         
         url = str(suggestUrl) + searchString
-        
         if originPrefix <> "":
             url += "&origins=" + originPrefix.strip()
 
@@ -198,6 +197,7 @@ class SuggestCompletion(QLineEdit, QWidget):
         url = networkReply.url()
         if not networkReply.error():
             displaytext = []
+            layername = []
             type =  []
             data = []
             
@@ -211,12 +211,11 @@ class SuggestCompletion(QLineEdit, QWidget):
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 QMessageBox.critical(None, "GeoAdminSearch", "Failed to load json response" + str(traceback.format_exc(exc_traceback)))                                    
                 return
-                                
-            for result in json_response['results']:
-                attrs = result['attrs']
-#                print attrs
-#                print searchType
-                if searchType == 'locations':
+                       
+              
+            if searchType == 'locations':
+                for result in json_response['results']:
+                    attrs = result['attrs']
                     # ignore results without 'geom_st_box2d' key
                     try:
                         bbox = attrs['geom_st_box2d']
@@ -230,42 +229,30 @@ class SuggestCompletion(QLineEdit, QWidget):
                         
                         data.append(attrs)
                     except:
-                        print 'no bbox found'
+#                        print 'no bbox found'
                         pass
-                elif searchType == 'layers':
-#                    print attrs
-                    label = attrs['label']
-                    label = label.replace('<b>', '').replace('</b>', '')                    
-                    layer = attrs['layer']
-                    displaytext.append(label + " (" + layer + ")")
-                    
-                    origin = attrs['origin']
-                    origin = self.origins[origin]
-                    type.append(origin)
+            elif searchType == 'layers':
+                for layer in json_response['layers']:
+                    attrs = layer['attributes']
+                    # ignore results without 'wmsUrlResource' key
+                    # these layers cannot be used/added to map canvas
+                    try:
+                        wmsUrlResource = attrs['wmsUrlResource']
+                        label = layer['fullName']
+                        displaytext.append(label)
+                        
+                        layerBodId = layer['layerBodId']
+                        layername.append(layerBodId)
 
-                    data.append(attrs)
+                        
+                        origin = self.origins['layer']
+                        type.append(origin)
+                        
+                        data.append(layer)
+                    except:
+#                        print 'no wmsUrlResource found'
+                        pass
 
-                    
-#                print result['attrs']['geom_st_box2d']
-#            for result in json_response['results']:
-##                print result['displaytext']
-#                searchtable = result['searchtable']
-#                
-##                print searchtable
-#                
-#                # Die "Titel"-Texte (z.B. Gemeinde, Flurnamen, etc.) haben keinen Searchtable.
-#                if not searchtable:
-#                    result_type = result['displaytext'] # z.B. Gemeinde. Bedingt aber dass diese IMMER vor den Resultaten mit dem Typ kommen.
-#                    continue
-#                
-#                displaytext = result['displaytext']
-#                text.append(unicode(result['displaytext']))
-#                data.append(unicode(result_type))
-#                searchTables.append(searchtable)
-#            
-            self.showCompletion(displaytext, type, data)
+            self.showCompletion(displaytext, layername, type, data)
         networkReply.deleteLater()
-        
-    def foo(self):
-        print "foobar"
-        
+

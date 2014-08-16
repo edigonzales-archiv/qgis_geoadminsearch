@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui_settings.ui'
 #
-# Created: Sat Aug 16 12:52:10 2014
+# Created: Sat Aug 16 16:30:48 2014
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -40,6 +40,20 @@ class Ui_Settings(object):
         self.tabOptions.setObjectName(_fromUtf8("tabOptions"))
         self.gridLayout_6 = QtGui.QGridLayout(self.tabOptions)
         self.gridLayout_6.setObjectName(_fromUtf8("gridLayout_6"))
+        self.groupBox_2 = QtGui.QGroupBox(self.tabOptions)
+        self.groupBox_2.setObjectName(_fromUtf8("groupBox_2"))
+        self.gridLayout_7 = QtGui.QGridLayout(self.groupBox_2)
+        self.gridLayout_7.setObjectName(_fromUtf8("gridLayout_7"))
+        self.horizontalLayout_3 = QtGui.QHBoxLayout()
+        self.horizontalLayout_3.setObjectName(_fromUtf8("horizontalLayout_3"))
+        self.label_4 = QtGui.QLabel(self.groupBox_2)
+        self.label_4.setObjectName(_fromUtf8("label_4"))
+        self.horizontalLayout_3.addWidget(self.label_4)
+        self.comboBoxProvider = QtGui.QComboBox(self.groupBox_2)
+        self.comboBoxProvider.setObjectName(_fromUtf8("comboBoxProvider"))
+        self.horizontalLayout_3.addWidget(self.comboBoxProvider)
+        self.gridLayout_7.addLayout(self.horizontalLayout_3, 0, 0, 1, 1)
+        self.gridLayout_6.addWidget(self.groupBox_2, 1, 0, 1, 1)
         self.groupBox = QtGui.QGroupBox(self.tabOptions)
         self.groupBox.setObjectName(_fromUtf8("groupBox"))
         self.gridLayout_5 = QtGui.QGridLayout(self.groupBox)
@@ -55,7 +69,7 @@ class Ui_Settings(object):
         self.gridLayout_5.addLayout(self.horizontalLayout, 0, 0, 1, 1)
         self.gridLayout_6.addWidget(self.groupBox, 0, 0, 1, 1)
         spacerItem = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
-        self.gridLayout_6.addItem(spacerItem, 1, 0, 1, 1)
+        self.gridLayout_6.addItem(spacerItem, 2, 0, 1, 1)
         self.tabWidget.addTab(self.tabOptions, _fromUtf8(""))
         self.tabAuthentification = QtGui.QWidget()
         self.tabAuthentification.setObjectName(_fromUtf8("tabAuthentification"))
@@ -112,6 +126,8 @@ class Ui_Settings(object):
 
     def retranslateUi(self, Settings):
         Settings.setWindowTitle(_translate("Settings", "GeoAdmin Search", None))
+        self.groupBox_2.setTitle(_translate("Settings", "Service provider ", None))
+        self.label_4.setText(_translate("Settings", "Preferred provider ", None))
         self.groupBox.setTitle(_translate("Settings", "Language ", None))
         self.label_3.setText(_translate("Settings", "Query language ", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabOptions), _translate("Settings", "Options", None))

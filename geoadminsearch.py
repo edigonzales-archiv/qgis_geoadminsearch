@@ -72,10 +72,6 @@ class GeoAdminSearch:
         self.dlg = SettingsDialog(self.canvas)
         self.dlg.initGui()
         
-        # origins mapping dictionary
-        self.originsMap = {'zipcode':'locations', 'gg25':'locations', 'district':'locations', 'kantone':'locations', 'sn25':'locations', 'address':'locations', 'parcel':'locations', 'layer':'layers'}
-        
-        
 #        # Create Rubberband
 #        self.rubberBand = QgsRubberBand(self.iface.mapCanvas(), True)
 #        self.rubberBand.setColor(QColor(255, 0, 0))
@@ -114,10 +110,6 @@ class GeoAdminSearch:
         self.comboSearchType = QComboBox(self.toolBar)
         self.comboSearchType.insertItem(0, _translate("GeoAdminSearch", "Locations",  None), "locations")
         
-        # Umbenennen in Maps -> MapServer
-        # Nein, layer suchen -> layer = layerboid in MapServer?
-        
-        
         self.comboSearchType.addItem(_translate("GeoAdminSearch", "Layers",  None), "layers")
         idx = self.comboSearchType.findData(self.searchType)
         self.comboSearchType.setCurrentIndex(idx)
@@ -140,48 +132,55 @@ class GeoAdminSearch:
         searchType = self.comboSearchType.itemData(idx)
         self.settings.setValue("searchtype", searchType)
 
-    def processResult(self, item, data):        
-        resultType = self.originsMap[data['origin']]
+    def processResult(self, item, data):                
+        searchType = self.comboSearchType.itemData(self.comboSearchType.currentIndex())
         
-        if resultType == "locations":
+        if searchType == "locations":
             self.processLocation(item, data)
-        elif resultType == "layers":
+        elif searchType == "layers":
             self.processLayer(item, data)
         
     def processLayer(self, item, data):
-        layerName = data['layer']
-        print layerName
-        
-        url = "https://api3.geo.admin.ch/rest/services/api/MapServer?searchText="
-        url += layerName.strip()
-        print url
-
-        self.networkAccess = QNetworkAccessManager()         
-        QObject.connect(self.networkAccess, SIGNAL("finished(QNetworkReply*)"), self.receiveLayerInfo)
-        self.networkAccess.get(QNetworkRequest(QUrl(url)))   
-        
-    def receiveLayerInfo(self, networkReply):
-        bytes = networkReply.readAll()
-        response = str(bytes)
-        
-        print response
-        
-        try:
-            my_response = unicode(response)
-            json_response = json.loads(my_response, object_pairs_hook=collections.OrderedDict) 
-        except Exception:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            QMessageBox.critical(None, "GeoAdminSearch", "Failed to load json response" + str(traceback.format_exc(exc_traceback)))                                    
-            return
-        
-        attrs = json_response['layers'][0]['attributes']
+        attrs = data['attributes']
         wmsUrlResource = attrs['wmsUrlResource']
-        wmsUrl = wmsUrlResource.split('?')[0]
-        print wmsUrl
         
-#                uri = "IgnoreGetMapUrl=1&crs="+crs+layer_string+style_string+"&format="+format+"&url="+url
-#                my_layer = QgsRasterLayer (uri, title, "wms", False)          
+        # why do have some layers two resources?
+        wmsUrlResource = wmsUrlResource.split('|')[0].strip()
         
+        url = wmsUrlResource.split('?')[0]
+        print url
+        
+        layer = data['layerBodId']
+        layerName = data['fullName']
+        
+        # what happens with a crs which is unknown by the server?
+        crs = self.iface.mapCanvas().mapSettings().destinationCrs().authid()
+        
+        uri = "IgnoreGetMapUrl=1&crs="+str(crs)+"&layers="+layer+"&styles=&format=image/png&url="+url
+        
+        # this is really unstable? QGIS? WMS-Server?
+        if url.find('httpauth') > 0:
+            userName = self.settings.value("options/username")
+            password = self.settings.value("options/password")
+            uri += "&username="+userName+"&password="+password
+        
+        wmsLayer = QgsRasterLayer (uri, layerName, "wms", False)      
+
+        if not wmsLayer.isValid():                
+            self.iface.messageBar().pushMessage("Error",  _translate("GeoAdminSearch", "Layer is not valid.",  None), level=QgsMessageBar.CRITICAL, duration=5)                                                            
+            return       
+        else:
+            root = QgsProject.instance().layerTreeRoot()
+            QgsMapLayerRegistry.instance().addMapLayer(wmsLayer, False) 
+            wmsLayerNode = root.addLayer(wmsLayer)
+            wmsLayerNode.setExpanded(False)                     
+                    
+        # reset LineEdit
+        self.resetSuggest()
+            
+        # stop timer
+        self.suggest.preventRequest()
+
     def processLocation(self, item, data):
         bbox = data['geom_st_box2d']
         coords = bbox[4:-1].split(',')
@@ -222,58 +221,9 @@ class GeoAdminSearch:
         self.iface.mapCanvas().setExtent(bbox)
         self.iface.mapCanvas().refresh() 
         
-        # Stop timer
+        # stop timer
         self.suggest.preventRequest()
         
-    def receiveGeometry(self, networkReply): 
-        bytes = networkReply.readAll()
-        wkt = QString(bytes)
-        print wkt
-        
-        geom = QgsGeometry.fromWkt(wkt)
-        
-        # Rubberband or Vertexmarker
-        wkbType = geom.wkbType()
-        if wkbType == 1 or wkbType == 5 or wkbType == 8 or wkbType == 11:
-            self.rubberBand.reset(True) # reset rubberband
-            
-            # Geht das nicht eleganter? Schon bei den CadTools ein Geknorze...
-            self.iface.mapCanvas().scene().removeItem(self.marker)  
-            self.marker = None
-
-            self.marker = QgsVertexMarker(self.iface.mapCanvas())
-            self.marker.setIconType(3)
-            self.marker.setColor(QColor(255,0,0))
-            self.marker.setIconSize(20)
-            self.marker.setPenWidth (3)
-            
-            if wkbType == 1 or wkbType == 8: # (Multi)Point(25D)
-                self.marker.setCenter(geom.asPoint())
-            else:
-                self.marker.setCenter(geom.asMultiPoint())
-                
-        else:
-            self.iface.mapCanvas().scene().removeItem(self.marker)  
-            self.marker = None
-            
-            if wkbType == 3 or wkbType == 6 or wkbType == 10 or wkbType == 13:
-                isPolygon = True # (Multi)Polygon(25D)
-            else:
-                isPolygon = False
-            
-            # Eventuell in Settings wählbar, ob man immer neues will?
-            self.rubberBand.reset(isPolygon)
-            self.rubberBand.addGeometry(geom, None)
-        
-        # Zoom to extent
-        bbox = geom.boundingBox() # Wie zoomt QGIS zum Punkt?
-        bbox.scale(1.2)
-        
-        self.iface.mapCanvas().setExtent(bbox)
-        self.iface.mapCanvas().refresh() 
-        
-        # Stop timer
-        self.suggest.preventRequest()
                 
     def unload(self):
         # Remove the plugin menu item and icon
