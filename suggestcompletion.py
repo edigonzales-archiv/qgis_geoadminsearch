@@ -11,7 +11,6 @@ from qgis.gui import *
 import json
 import sys
 import traceback
-import traceback
 import collections
 
 from collections import OrderedDict
@@ -33,7 +32,7 @@ class SuggestCompletion(QLineEdit, QWidget):
         self.origins = {'zipcode': _translate("GeoAdminSearch", "Zipcode",  None), 'gg25': _translate("GeoAdminSearch", "Administrative boundary",  None), 
             'district': _translate("GeoAdminSearch", "District",  None), 'kantone': _translate("GeoAdminSearch", "Canton",  None),
             'sn25': _translate("GeoAdminSearch", "Named location",  None), 'address': _translate("GeoAdminSearch", "Address",  None),
-            'parcel': _translate("GeoAdminSearch", "Parcel",  None)}
+            'parcel': _translate("GeoAdminSearch", "Parcel",  None), 'layer': _translate("GeoAdminSearch", "Layer",  None)}
         
 #        self.SUGGEST_URL = "http://api3.geo.admin.ch/rest/services/api/SearchServer?type=" + searchType + "&searchText="
 
@@ -149,10 +148,15 @@ class SuggestCompletion(QLineEdit, QWidget):
             self.emit(SIGNAL("searchEnterered(QString, QVariant)"),  unicode(item.text(0)), item.data(2, Qt.UserRole))
         
     def autoSuggest(self):
-        # search type and search url
+        # search type, language and search url
         searchType = self.settings.value("searchtype", "locations")
-        print searchType        
-        suggestUrl = "http://api3.geo.admin.ch/rest/services/api/SearchServer?type=" + searchType + "&searchText="
+        searchLanguage = self.settings.value("options/language", "de")
+
+        if searchType == "layers":
+            suggestUrl = "http://api3.geo.admin.ch/rest/services/ech/SearchServer?lang=" + searchLanguage + "&type=" + searchType + "&searchText="
+        else: 
+            suggestUrl = "http://api3.geo.admin.ch/rest/services/api/SearchServer?type=" + searchType + "&searchText="
+            
         print suggestUrl
         
         # http headers
@@ -203,7 +207,6 @@ class SuggestCompletion(QLineEdit, QWidget):
             try:
                 my_response = unicode(response)
                 json_response = json.loads(my_response, object_pairs_hook=collections.OrderedDict) 
-                
             except Exception:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 QMessageBox.critical(None, "GeoAdminSearch", "Failed to load json response" + str(traceback.format_exc(exc_traceback)))                                    
@@ -229,7 +232,20 @@ class SuggestCompletion(QLineEdit, QWidget):
                     except:
                         print 'no bbox found'
                         pass
+                elif searchType == 'layers':
+#                    print attrs
+                    label = attrs['label']
+                    label = label.replace('<b>', '').replace('</b>', '')                    
+                    layer = attrs['layer']
+                    displaytext.append(label + " (" + layer + ")")
+                    
+                    origin = attrs['origin']
+                    origin = self.origins[origin]
+                    type.append(origin)
 
+                    data.append(attrs)
+
+                    
 #                print result['attrs']['geom_st_box2d']
 #            for result in json_response['results']:
 ##                print result['displaytext']

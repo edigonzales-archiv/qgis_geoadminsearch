@@ -30,6 +30,11 @@ from qgis.gui import *
 from settingsdialog import SettingsDialog
 from suggestcompletion import SuggestCompletion
 
+import json
+import sys
+import traceback
+import collections
+
 import resources_rc
 
 try:
@@ -140,20 +145,55 @@ class GeoAdminSearch:
         
         if resultType == "locations":
             self.processLocation(item, data)
+        elif resultType == "layers":
+            self.processLayer(item, data)
         
+    def processLayer(self, item, data):
+        layerName = data['layer']
+        print layerName
+        
+        url = "https://api3.geo.admin.ch/rest/services/api/MapServer?searchText="
+        url += layerName.strip()
+        print url
+
+        self.networkAccess = QNetworkAccessManager()         
+        QObject.connect(self.networkAccess, SIGNAL("finished(QNetworkReply*)"), self.receiveLayerInfo)
+        self.networkAccess.get(QNetworkRequest(QUrl(url)))   
+        
+    def receiveLayerInfo(self, networkReply):
+        bytes = networkReply.readAll()
+        response = str(bytes)
+        
+        print response
+        
+        try:
+            my_response = unicode(response)
+            json_response = json.loads(my_response, object_pairs_hook=collections.OrderedDict) 
+        except Exception:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            QMessageBox.critical(None, "GeoAdminSearch", "Failed to load json response" + str(traceback.format_exc(exc_traceback)))                                    
+            return
+        
+        attrs = json_response['layers'][0]['attributes']
+        wmsUrlResource = attrs['wmsUrlResource']
+        wmsUrl = wmsUrlResource.split('?')[0]
+        print wmsUrl
+        
+#                uri = "IgnoreGetMapUrl=1&crs="+crs+layer_string+style_string+"&format="+format+"&url="+url
+#                my_layer = QgsRasterLayer (uri, title, "wms", False)          
         
     def processLocation(self, item, data):
         bbox = data['geom_st_box2d']
-        print bbox
         coords = bbox[4:-1].split(',')
+        
         min = coords[0].split(' ')
         xmin = min[0]
         ymin = min[1]
+        
         max = coords[1].split(' ')
         xmax = max[0]        
         ymax = max[1]
         
-        # QgsRectangle cannot handle this.
         if xmin == xmax or ymin == ymax:
             point = QgsPoint(float(xmin), float(ymin))
             geom = QgsGeometry().fromPoint(point)

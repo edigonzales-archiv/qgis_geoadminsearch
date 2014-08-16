@@ -45,6 +45,16 @@ class SettingsDialog(QDialog, Ui_Settings):
         self.settings = QSettings("CatAIS","GeoAdminSearch")
         
     def initGui(self):
+        self.comboBoxLanguage.insertItem(self.comboBoxLanguage.count(),  _translate("GeoAdminSearch", "German", None), "de")
+        self.comboBoxLanguage.insertItem(self.comboBoxLanguage.count(),  _translate("GeoAdminSearch", "Français", None), "fr")
+        self.comboBoxLanguage.insertItem(self.comboBoxLanguage.count(),  _translate("GeoAdminSearch", "Italian", None), "it")
+        self.comboBoxLanguage.insertItem(self.comboBoxLanguage.count(),  _translate("GeoAdminSearch", "Rhaeto-Romanic ", None), "rm")
+        self.comboBoxLanguage.insertItem(self.comboBoxLanguage.count(),  _translate("GeoAdminSearch", "English", None), "en")
+        
+        lang = self.settings.value("options/language", "de")
+        idx = self.comboBoxLanguage.findData(lang)
+        self.comboBoxLanguage.setCurrentIndex(idx)
+
         QWidget.setTabOrder(self.lineEditUserName, self.lineEditPassword)
                 
         userName = self.settings.value("options/username")
@@ -77,6 +87,10 @@ class SettingsDialog(QDialog, Ui_Settings):
             self.treeWidgetHeaders.takeTopLevelItem(self.treeWidgetHeaders.indexOfTopLevelItem(item))
     
     def accept(self):    
+        idx = self.comboBoxLanguage.currentIndex()
+        lang = self.comboBoxLanguage.itemData(idx)
+        self.settings.setValue("options/language", lang)
+        
         userName = self.lineEditUserName.text()
         password = self.lineEditPassword.text()
         self.settings.setValue("options/username", userName)
