@@ -54,6 +54,13 @@ class SettingsDialog(QDialog, Ui_Settings):
         lang = self.settings.value("options/language", "de")
         idx = self.comboBoxLanguage.findData(lang)
         self.comboBoxLanguage.setCurrentIndex(idx)
+        
+        self.comboBoxProvider.insertItem(self.comboBoxProvider.count(),  _translate("GeoAdminSearch", "WMS", None), "WMS")
+        self.comboBoxProvider.insertItem(self.comboBoxProvider.count(),  _translate("GeoAdminSearch", "WMTS", None), "WMTS")
+
+        provider = self.settings.value("options/provider", "WMTS")
+        idx = self.comboBoxProvider.findData(provider)
+        self.comboBoxProvider.setCurrentIndex(idx)
 
         QWidget.setTabOrder(self.lineEditUserName, self.lineEditPassword)
                 
@@ -90,6 +97,10 @@ class SettingsDialog(QDialog, Ui_Settings):
         idx = self.comboBoxLanguage.currentIndex()
         lang = self.comboBoxLanguage.itemData(idx)
         self.settings.setValue("options/language", lang)
+        
+        idx = self.comboBoxProvider.currentIndex()
+        provider = self.comboBoxProvider.itemData(idx)
+        self.settings.setValue("options/provider", provider)
         
         userName = self.lineEditUserName.text()
         password = self.lineEditPassword.text()

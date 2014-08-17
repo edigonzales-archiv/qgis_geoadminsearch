@@ -114,6 +114,7 @@ class SuggestCompletion(QLineEdit, QWidget):
             item.setText(0, displaytext[i])
             try:
                 item.setText(1, layername[i])
+                item.setTextColor(1, color)
             except:
                 pass
             item.setText(2, origin[i])
@@ -152,11 +153,10 @@ class SuggestCompletion(QLineEdit, QWidget):
         searchLanguage = self.settings.value("options/language", "de")
 
         if searchType == "layers":
-            # Use mapserver search here since SearchServer does not know about availability of layer.
-            suggestUrl = "http://api3.geo.admin.ch/rest/services/api/MapServer?lang=" + searchLanguage + "&searchText="
+            suggestUrl = "http://api3.geo.admin.ch/rest/services/ech/SearchServer?lang=" + searchLanguage + "&type=" + searchType + "&searchText="
         else: 
-            suggestUrl = "http://api3.geo.admin.ch/rest/services/api/SearchServer?type=" + searchType + "&searchText="
-            
+            suggestUrl = "http://api3.geo.admin.ch/rest/services/ech/SearchServer?type=" + searchType + "&searchText="            
+        
         print suggestUrl
         
         # http headers
@@ -191,7 +191,7 @@ class SuggestCompletion(QLineEdit, QWidget):
     def preventRequest(self):
         self.timer.stop()
         
-    def handleNetworkData(self, networkReply):
+    def handleNetworkData(self, networkReply):    
         searchType = self.settings.value("searchtype", "locations")
         
         url = networkReply.url()
@@ -202,7 +202,6 @@ class SuggestCompletion(QLineEdit, QWidget):
             data = []
             
             response = networkReply.readAll()
-#            print response
     
             try:
                 my_response = unicode(response)
@@ -212,10 +211,10 @@ class SuggestCompletion(QLineEdit, QWidget):
                 QMessageBox.critical(None, "GeoAdminSearch", "Failed to load json response" + str(traceback.format_exc(exc_traceback)))                                    
                 return
                        
-              
-            if searchType == 'locations':
-                for result in json_response['results']:
-                    attrs = result['attrs']
+            for result in json_response['results']:
+                attrs = result['attrs']
+
+                if searchType == 'locations':
                     # ignore results without 'geom_st_box2d' key
                     try:
                         bbox = attrs['geom_st_box2d']
@@ -229,30 +228,21 @@ class SuggestCompletion(QLineEdit, QWidget):
                         
                         data.append(attrs)
                     except:
-#                        print 'no bbox found'
+                        print 'no bbox found'
                         pass
-            elif searchType == 'layers':
-                for layer in json_response['layers']:
-                    attrs = layer['attributes']
-                    # ignore results without 'wmsUrlResource' key
-                    # these layers cannot be used/added to map canvas
-                    try:
-                        wmsUrlResource = attrs['wmsUrlResource']
-                        label = layer['fullName']
-                        displaytext.append(label)
-                        
-                        layerBodId = layer['layerBodId']
-                        layername.append(layerBodId)
+                elif  searchType == 'layers':
+                    label = attrs['label']
+                    label = label.replace('<b>', '').replace('</b>', '')                    
+                    displaytext.append(label)
 
-                        
-                        origin = self.origins['layer']
-                        type.append(origin)
-                        
-                        data.append(layer)
-                    except:
-#                        print 'no wmsUrlResource found'
-                        pass
+                    layer = attrs['layer']
+                    layername.append(layer)
 
+                    origin = self.origins['layer']
+                    type.append(origin)
+
+                    data.append(attrs)
+            
             self.showCompletion(displaytext, layername, type, data)
         networkReply.deleteLater()
 

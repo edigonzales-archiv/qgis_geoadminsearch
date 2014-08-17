@@ -72,6 +72,9 @@ class GeoAdminSearch:
         self.dlg = SettingsDialog(self.canvas)
         self.dlg.initGui()
         
+        # origins mapping dictionary
+        self.originsMap = {'zipcode':'locations', 'gg25':'locations', 'district':'locations', 'kantone':'locations', 'sn25':'locations', 'address':'locations', 'parcel':'locations', 'layer':'layers'}
+                
 #        # Create Rubberband
 #        self.rubberBand = QgsRubberBand(self.iface.mapCanvas(), True)
 #        self.rubberBand.setColor(QColor(255, 0, 0))
@@ -141,45 +144,197 @@ class GeoAdminSearch:
             self.processLayer(item, data)
         
     def processLayer(self, item, data):
-        attrs = data['attributes']
-        wmsUrlResource = attrs['wmsUrlResource']
+        print "processLayer"
+        preferredProvider = self.settings.value("options/provider", "WMTS")
         
-        # why do have some layers two resources?
-        wmsUrlResource = wmsUrlResource.split('|')[0].strip()
-        
-        url = wmsUrlResource.split('?')[0]
+                
+        if preferredProvider == "WMTS":
+            print "add layer here"
+            
+            self.processWMTSLayer(data)
+
+
+
+    def processWMTSLayer(self, data):
+        url = "http://wmts.geo.admin.ch/1.0.0/WMTSCapabilities.xml"
         print url
+
+        self.networkAccess = QNetworkAccessManager()         
+        QObject.connect(self.networkAccess, SIGNAL("finished(QNetworkReply*)"), lambda event, layerData=data: self.receiveWMTSCapabilities(event, layerData))
+        self.networkAccess.get(QNetworkRequest(QUrl(url)))   
+
+
+    # Problem: Identifier muss vor allem anderen kommen... 
+    # Geht das auch besser?
+    # Alles in Dictionary und dann auslesen, zB.
+    def receiveWMTSCapabilities(self, networkReply, data):
+        layerName = data['layer']
         
-        layer = data['layerBodId']
-        layerName = data['fullName']
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            if not networkReply.error():
+                response = networkReply.readAll()
+                xml = QXmlStreamReader(response)
+                while not xml.atEnd():
+                    token = xml.readNext()
+                    if token == QXmlStreamReader.StartDocument:
+                        continue
+                    
+                    if token == QXmlStreamReader.StartElement:
+                        if xml.name() == "Layer":
+                            
+                            identifier = None
+                            format = None
+                            time = None
+                            tileMatrixSet = None
+
+                            xml.readNext()
+                            
+                            while not (xml.tokenType() == QXmlStreamReader.EndElement and xml.name() == "Layer"):
+                                if xml.tokenType() == QXmlStreamReader.StartElement:
+                                    
+                                    if xml.name() == "Identifier" and identifier == None:
+                                        my_identifier =  xml.readElementText().strip()
+                                        if my_identifier == layerName:
+                                            identifier = my_identifier
+                                    
+                                    if xml.name() == "Format" and format == None:
+                                         my_format = xml.readElementText().strip()
+                                        
+                                    if xml.name() == "Dimension" and time == None:
+                                        while not (xml.tokenType() == QXmlStreamReader.EndElement and xml.name() == "Dimension"):
+                                            if xml.tokenType() == QXmlStreamReader.StartElement:
+                                                if xml.name() == "Default":
+                                                    my_time = xml.readElementText().strip()
+                                            xml.readNext()
+                                         
+                                    if xml.name() == "TileMatrixSetLink" and tileMatrixSet == None:
+                                        while not (xml.tokenType() == QXmlStreamReader.EndElement and xml.name() == "TileMatrixSetLink"):
+                                            if xml.tokenType() == QXmlStreamReader.StartElement:
+                                                if xml.name() == "TileMatrixSet":
+                                                    my_tileMatrixSet = xml.readElementText().strip()
+                                            xml.readNext()
+                                         
+                                xml.readNext()
+                            
+                            if identifier <> None:
+                                format = my_format
+                                time = my_time
+                                tileMatrixSet = my_tileMatrixSet
+                                break
+
+            print "end of WMTSCapabilities.xml"
+           
+            if not identifier or not format or not time or not tileMatrixSet: 
+                self.iface.messageBar().pushMessage("Error",  _translate("GeoAdminSearch", "WMTS layer not found. Will try to add it as WMS layer.",  None), level=QgsMessageBar.WARNING, duration=10)      
+                QApplication.restoreOverrideCursor()            
+                                
+                #TODO: if not found perhaps it is available as wms.
+                
+                return
+                
+            self.addWMTSLayer(identifier, format, time, tileMatrixSet, data)
         
-        # what happens with a crs which is unknown by the server?
-        crs = self.iface.mapCanvas().mapSettings().destinationCrs().authid()
+        except:
+            QApplication.restoreOverrideCursor()            
+        QApplication.restoreOverrideCursor()      
+
+    # EPSG:21781 only!
+    def addWMTSLayer(self, identifier, format, time, tileMatrixSet, data):
+        # http referer
+        headerFields = self.settings.value("options/headerfields")
+        headerValues = self.settings.value("options/headervalues")
+        referer =""
+        if headerFields and headerValues:
+            for i in range(len(headerFields)):
+                if headerFields[i] == "Referer":
+                    referer = headerValues[i]
+                    
+        layerName = data['label'].replace('<b>', '').replace('</b>', '')
         
-        uri = "IgnoreGetMapUrl=1&crs="+str(crs)+"&layers="+layer+"&styles=&format=image/png&url="+url
-        
-        # this is really unstable? QGIS? WMS-Server?
-        if url.find('httpauth') > 0:
-            userName = self.settings.value("options/username")
-            password = self.settings.value("options/password")
-            uri += "&username="+userName+"&password="+password
+        uri = "crs=EPSG:21781&dpiMode=7&featureCount=10&format="+format+"&layers="+identifier+"&referer="+referer+"&styles=&tileDimensions=Time%3D"+time+"&tileMatrixSet="+tileMatrixSet+"&url=http://wmts.geo.admin.ch/1.0.0/WMTSCapabilities.xml"
+        print uri
         
         wmsLayer = QgsRasterLayer (uri, layerName, "wms", False)      
 
         if not wmsLayer.isValid():                
-            self.iface.messageBar().pushMessage("Error",  _translate("GeoAdminSearch", "Layer is not valid.",  None), level=QgsMessageBar.CRITICAL, duration=5)                                                            
+            self.iface.messageBar().pushMessage("Error",  _translate("GeoAdminSearch", "WMTS layer is not valid.",  None), level=QgsMessageBar.CRITICAL, duration=5)                                                            
             return       
         else:
-            root = QgsProject.instance().layerTreeRoot()
-            QgsMapLayerRegistry.instance().addMapLayer(wmsLayer, False) 
-            wmsLayerNode = root.addLayer(wmsLayer)
-            wmsLayerNode.setExpanded(False)                     
-                    
-        # reset LineEdit
-        self.resetSuggest()
-            
-        # stop timer
-        self.suggest.preventRequest()
+                root = QgsProject.instance().layerTreeRoot()
+                QgsMapLayerRegistry.instance().addMapLayer(wmsLayer, False) 
+                wmsLayerNode = root.addLayer(wmsLayer)
+                wmsLayerNode.setExpanded(False)                     
+        
+##            uri = "crs=EPSG:21781&dpiMode=7&featureCount=10&format=image/png&layers=ch.swisstopo.dreiecksvermaschung&referer="+referer+"&styles=ch.swisstopo.dreiecksvermaschung&tileMatrixSet=21781_26&url=http://wmts.geo.admin.ch/1.0.0/WMTSCapabilities.xml"
+#            
+#            QApplication.setOverrideCursor(Qt.WaitCursor)
+#            try:
+#                wmsLayer = QgsRasterLayer (uri, layerName, "wms", False)      
+#
+#                if not wmsLayer.isValid():                
+#                    self.iface.messageBar().pushMessage("Error",  _translate("GeoAdminSearch", "WMTS layer is not valid.",  None), level=QgsMessageBar.CRITICAL, duration=5)                                                            
+#                    return       
+#                else:
+#                        root = QgsProject.instance().layerTreeRoot()
+#                        QgsMapLayerRegistry.instance().addMapLayer(wmsLayer, False) 
+#                        wmsLayerNode = root.addLayer(wmsLayer)
+#                        wmsLayerNode.setExpanded(False)                     
+#            except:
+#                QApplication.restoreOverrideCursor()            
+#            QApplication.restoreOverrideCursor()      
+#
+#            
+#        elif preferredProvider == "WMS":
+#            print "get metadata"
+#            
+#        
+#        
+#        
+#        
+#        
+#        
+#        return
+#        
+#        attrs = data['attributes']
+#        wmsUrlResource = attrs['wmsUrlResource']
+#        
+#        # why do have some layers two resources?
+#        wmsUrlResource = wmsUrlResource.split('|')[0].strip()
+#        
+#        url = wmsUrlResource.split('?')[0]
+#        print url
+#        
+#        layer = data['layerBodId']
+#        layerName = data['fullName']
+#        
+#        # what happens with a crs which is unknown by the server?
+#        crs = self.iface.mapCanvas().mapSettings().destinationCrs().authid()
+#        
+#        uri = "IgnoreGetMapUrl=1&crs="+str(crs)+"&layers="+layer+"&styles=&format=image/png&url="+url
+#        
+#        # this is really unstable? QGIS? WMS-Server?
+#        if url.find('httpauth') > 0:
+#            userName = self.settings.value("options/username")
+#            password = self.settings.value("options/password")
+#            uri += "&username="+userName+"&password="+password
+#        
+#        wmsLayer = QgsRasterLayer (uri, layerName, "wms", False)      
+#
+#        if not wmsLayer.isValid():                
+#            self.iface.messageBar().pushMessage("Error",  _translate("GeoAdminSearch", "Layer is not valid.",  None), level=QgsMessageBar.CRITICAL, duration=5)                                                            
+#            return       
+#        else:
+#            root = QgsProject.instance().layerTreeRoot()
+#            QgsMapLayerRegistry.instance().addMapLayer(wmsLayer, False) 
+#            wmsLayerNode = root.addLayer(wmsLayer)
+#            wmsLayerNode.setExpanded(False)                     
+#                    
+#        # reset LineEdit
+#        self.resetSuggest()
+#            
+#        # stop timer
+#        self.suggest.preventRequest()
 
     def processLocation(self, item, data):
         bbox = data['geom_st_box2d']
