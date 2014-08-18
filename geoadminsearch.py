@@ -29,6 +29,8 @@ from qgis.gui import *
 
 from settingsdialog import SettingsDialog
 from suggestcompletion import SuggestCompletion
+from wmslayer import WmsLayer
+from layernotfoundexception import LayerNotFoundException
 
 import json
 import sys
@@ -146,13 +148,13 @@ class GeoAdminSearch:
         if searchType == "locations":
             self.processLocation(item, data)
         elif searchType == "layers":
-            self.processLayer(item, data)
+            self.processLayer(data)
         
         self.resetSuggest()
             
         self.suggest.preventRequest()                    
         
-    def processLayer(self, item, data):
+    def processLayer(self, data):
         print "processLayer"
         preferredProvider = self.settings.value("options/provider", "WMTS")
         
@@ -166,8 +168,20 @@ class GeoAdminSearch:
             print "wmts layer"
             self.processWMTSLayer(data)
         elif preferredProvider == "WMS":
-            print "wms layer"
+#            print "wms layer"
+#            try:
+#                wmsLayer = WmsLayer(self.iface, data)
+#                
+#                
+#            except:
+#                print "WMS not found -> try WMTS"
+
+#  netzwerkquatsch für beide layer hier gemeinsam? erst anschliessend eigene klassen?
+                
             self.processWMSLayer(data)
+
+
+        # Was ist return value? wo soll layer geadded werden? in der klasse?
 
     def processWMSLayer(self, data):    
         searchLanguage = self.settings.value("options/language", "de")
