@@ -153,7 +153,7 @@ class SuggestCompletion(QLineEdit, QWidget):
         searchLanguage = self.settings.value("options/language", "de")
 
         if searchType == "layers":
-            suggestUrl = "http://api3.geo.admin.ch/rest/services/ech/SearchServer?lang=" + searchLanguage + "&type=" + searchType + "&searchText="
+            suggestUrl = "http://api3.geo.admin.ch/rest/services/api/SearchServer?lang=" + searchLanguage + "&type=" + searchType + "&searchText="
         else: 
             suggestUrl = "http://api3.geo.admin.ch/rest/services/ech/SearchServer?type=" + searchType + "&searchText="            
         
