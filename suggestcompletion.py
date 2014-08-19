@@ -223,7 +223,7 @@ class SuggestCompletion(QLineEdit, QWidget):
 
         if searchType == "layers":
             suggestUrl = "http://api3.geo.admin.ch/rest/services/api/SearchServer?lang=" + searchLanguage + "&type=" + searchType + "&searchText="
-        elif searchType == "location":
+        elif searchType == "locations":
             suggestUrl = "http://api3.geo.admin.ch/rest/services/ech/SearchServer?type=" + searchType + "&searchText="         
         elif searchType == "featuresearch":
             print "featuresearch"
