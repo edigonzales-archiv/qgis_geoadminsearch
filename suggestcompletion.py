@@ -35,7 +35,42 @@ class SuggestCompletion(QLineEdit, QWidget):
         self.origins = {'zipcode': _translate("GeoAdminSearch", "Zipcode",  None), 'gg25': _translate("GeoAdminSearch", "Administrative boundary",  None), 
             'district': _translate("GeoAdminSearch", "District",  None), 'kantone': _translate("GeoAdminSearch", "Canton",  None),
             'sn25': _translate("GeoAdminSearch", "Named location",  None), 'address': _translate("GeoAdminSearch", "Address",  None),
-            'parcel': _translate("GeoAdminSearch", "Parcel",  None), 'layer': _translate("GeoAdminSearch", "Layer",  None)}
+            'parcel': _translate("GeoAdminSearch", "Parcel",  None), 'layer': _translate("GeoAdminSearch", "Layer",  None), 
+            'feature': _translate("GeoAdminSearch", "Feature",  None)}
+            
+        self.searchableLayers = [
+            'ch.swisstopo.verschiebungsvektoren-tsp2',
+            'ch.swisstopo.verschiebungsvektoren-tsp1',
+            'ch.swisstopo.swissboundaries3d-kanton-flaeche.fill',
+            'ch.swisstopo.lubis-luftbilder_infrarot',
+            'ch.astra.strassenverkehrszaehlung_messstellen-uebergeordnet',
+            'ch.bafu.hydrologie-wassertemperaturmessstationen',
+            'ch.swisstopo.lubis-bildstreifen',
+            'ch.bazl.sicherheitszonenplan',
+            'ch.swisstopo.lubis-luftbilder-dritte-kantone',
+            'ch.astra.strassenverkehrszaehlung_messstellen-regional_lokal',
+            'ch.swisstopo.fixpunkte-hfp1',
+            'ch.babs.kulturgueter',
+            'ch.swisstopo.lubis-luftbilder_schwarzweiss',
+            'ch.bakom.versorgungsgebiet-tv',
+            'ch.swisstopo.geologie-gravimetrischer_atlas.metadata',
+            'ch.bafu.hydrologie-gewaesserzustandsmessstationen',
+            'ch.astra.ivs-nat',
+            'ch.astra.ivs-reg_loc',
+            'ch.bav.sachplan-infrastruktur-schiene_kraft',
+            'ch.swisstopo.lubis-luftbilder_farbe',
+            'ch.bfs.gebaeude_wohnungs_register',
+            'ch.swisstopo.swissboundaries3d-bezirk-flaeche.fill',
+            'ch.swisstopo.fixpunkte-lfp1',
+            'ch.swisstopo.fixpunkte-lfp2',
+            'ch.swisstopo.lubis-luftbilder-dritte-firmen',
+            'ch.swisstopo.vec200-names-namedlocation',
+            'ch.swisstopo-vd.ortschaftenverzeichnis_plz',
+            'ch.astra.ivs-nat-verlaeufe',
+            'ch.swisstopo.swissboundaries3d-gemeinde-flaeche.fill',
+            'ch.bakom.versorgungsgebiet-ukw',
+            'ch.bakom.radio-fernsehsender',
+            'ch.swisstopo.fixpunkte-hfp2']            
             
         self.geoadminLayers = []
         
@@ -90,8 +125,9 @@ class SuggestCompletion(QLineEdit, QWidget):
 
                 if wmsUrl.find('swisstopo.admin.ch') > 0 or wmsUrl.find('geo.admin.ch') > 0:
                     for layer in layers:
-                        self.geoadminLayers.append(layer)
-        
+                        if layer in self.searchableLayers:
+                            self.geoadminLayers.append(layer)
+
     def updateRemoveLayerList(self, id):
         self.geoadminLayers = []
         layers = self.iface.mapCanvas().layers()
@@ -171,7 +207,6 @@ class SuggestCompletion(QLineEdit, QWidget):
         self.setFocus()
 
     def doneCompletion(self):
-        print "doneCompletion"        
         self.timer.stop()
         self.popup.hide()
         self.setFocus()
@@ -194,11 +229,6 @@ class SuggestCompletion(QLineEdit, QWidget):
             print "featuresearch"
             featureLayerNames = ','.join(self.geoadminLayers)            
             suggestUrl = "http://api3.geo.admin.ch/rest/services/ech/SearchServer?features=" + featureLayerNames + "&type=" + searchType + "&searchText=" 
-            print suggestUrl
-            
-            
-            return
-         
         
         print suggestUrl
         
@@ -269,8 +299,8 @@ class SuggestCompletion(QLineEdit, QWidget):
                         
                         data.append(attrs)
                     except:
-                        print 'no bbox found'
                         pass
+                        
                 elif  searchType == 'layers':
                     label = attrs['label']
                     label = label.replace('<b>', '').replace('</b>', '')                    
@@ -283,6 +313,21 @@ class SuggestCompletion(QLineEdit, QWidget):
                     type.append(origin)
 
                     data.append(attrs)
+                    
+                elif searchType == 'featuresearch':
+                    label = attrs['label']
+                    label = label.replace('<b>', '').replace('</b>', '')                    
+                    displaytext.append(label)
+
+                    layer = attrs['layer']
+                    layername.append(layer)
+
+                    origin = self.origins['feature']
+                    type.append(origin)
+
+                    data.append(attrs)
+
+                    
             
             self.showCompletion(displaytext, layername, type, data)
         networkReply.deleteLater()

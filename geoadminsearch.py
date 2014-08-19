@@ -22,6 +22,7 @@
 # Import the PyQt and QGIS libraries
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
+from PyQt4.QtWebKit import *
 from PyQt4.QtNetwork import QNetworkAccessManager
 from PyQt4.QtNetwork import QNetworkRequest
 from qgis.core import *
@@ -31,6 +32,7 @@ from settingsdialog import SettingsDialog
 from suggestcompletion import SuggestCompletion
 from wmslayer import WmsLayer
 from wmtslayer import WmtsLayer
+from featuresearch import FeatureSearch
 
 import json
 import sys
@@ -136,24 +138,29 @@ class GeoAdminSearch:
         elif searchType == "layers":
             self.processLayer(data)
         elif searchType == "featuresearch":
-            print data
+            self.processFeatureSearch(data)
         
-#        self.resetSuggest()
-
         self.suggest.preventRequest()                    
+        
+    def processFeatureSearch(self, data):
+        featureSearch = FeatureSearch(self.iface, data)
+        
+        
+        
+        # vertex marker here
         
     def processLayer(self, data):
         preferredProvider = self.settings.value("options/provider", "WMTS")
         
         if preferredProvider == "WMTS":
-            # hardcoded
-            crs = self.iface.mapCanvas().mapSettings().destinationCrs().authid()
+            crs = self.iface.mapCanvas().mapSettings().destinationCrs().authid()   # hardcoded
             if crs <> "EPSG:21781":
                 self.iface.messageBar().pushMessage("Warning",  _translate("GeoAdminSearch", "Only EPSG:21781 tiles are available. ",  None) + str(traceback.format_exc(exc_traceback)), level=QgsMessageBar.WARNING, duration=10)      
                 return
                 
             wmtsLayer = WmtsLayer(self.iface, data)
             QObject.connect(wmtsLayer, SIGNAL("wmtsLayerNotFound(QVariant, QString)"), self.processFallback)
+            
         elif preferredProvider == "WMS":
             wmsLayer = WmsLayer(self.iface, data)
             QObject.connect(wmsLayer, SIGNAL("wmsLayerNotFound(QVariant, QString)"), self.processFallback)
@@ -197,17 +204,14 @@ class GeoAdminSearch:
             rect.scale(1.2)
             geom = QgsGeometry().fromRect(rect)
 
-        # pan/zoom to result
         bbox = geom.boundingBox() 
         self.iface.mapCanvas().setExtent(bbox)
         self.iface.mapCanvas().refresh() 
                 
     def unload(self):
-        # Remove the plugin menu item and icon
         self.iface.removePluginMenu(u"&Sogis Suche", self.action)
         self.iface.removeToolBarIcon(self.action)
         
-        # Remove own toolbar
         self.iface.mainWindow().removeToolBar(self.toolBar)
 
     def run(self):
