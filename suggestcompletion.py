@@ -24,8 +24,11 @@ except AttributeError:
         return QApplication.translate(context, text, disambig)
 
 class SuggestCompletion(QLineEdit, QWidget):
-    def __init__(self, parent):
+    def __init__(self, iface, parent):
         QLineEdit.__init__(self, parent)
+        
+        self.iface = iface
+        self.canvas = self.iface.mapCanvas()
 
         self.settings = QSettings("CatAIS","GeoAdminSearch")
         
@@ -33,6 +36,8 @@ class SuggestCompletion(QLineEdit, QWidget):
             'district': _translate("GeoAdminSearch", "District",  None), 'kantone': _translate("GeoAdminSearch", "Canton",  None),
             'sn25': _translate("GeoAdminSearch", "Named location",  None), 'address': _translate("GeoAdminSearch", "Address",  None),
             'parcel': _translate("GeoAdminSearch", "Parcel",  None), 'layer': _translate("GeoAdminSearch", "Layer",  None)}
+            
+        self.geoadminLayers = []
         
         self.popup = QTreeWidget()
         self.popup.setWindowFlags(Qt.Popup);
@@ -64,6 +69,35 @@ class SuggestCompletion(QLineEdit, QWidget):
         self.networkManager = QNetworkAccessManager(self)
         self.connect(self.networkManager, SIGNAL("finished(QNetworkReply*)"), self.handleNetworkData)
         
+        # connect to layer added signal
+#        self.connect(self.canvas, SIGNAL("layersChanged()"), self.updateLayerList)
+#        self.connect(QgsMapLayerRegistry.instance(), SIGNAL("layersAdded(QVariant)"), self.updateLayerList)
+        QgsMapLayerRegistry.instance().layerWasAdded["QgsMapLayer*"].connect(self.updateAddLayerList)
+        QgsMapLayerRegistry.instance().layerRemoved["QString"].connect(self.updateRemoveLayerList)
+
+    def updateAddLayerList(self, mapLayer):
+        if mapLayer.type() == QgsMapLayer.RasterLayer:
+            if mapLayer.providerType() == "wms":
+                layerSource = mapLayer.source()
+                params = layerSource.split('&')
+                wmsUrl = ""
+                layers = []                
+                for param in params:
+                    if param[0:3] == "url":
+                        wmsUrl = param[4:].strip()
+                    if param[0:6] == "layers":
+                        layers.append(param[7:].strip())
+
+                if wmsUrl.find('swisstopo.admin.ch') > 0 or wmsUrl.find('geo.admin.ch') > 0:
+                    for layer in layers:
+                        self.geoadminLayers.append(layer)
+        
+    def updateRemoveLayerList(self, id):
+        self.geoadminLayers = []
+        layers = self.iface.mapCanvas().layers()
+        for layer in layers:    
+            self.updateAddLayerList(layer)
+                
     def eventFilter(self, obj, ev):
         try:
             if obj != self.popup:
@@ -154,8 +188,17 @@ class SuggestCompletion(QLineEdit, QWidget):
 
         if searchType == "layers":
             suggestUrl = "http://api3.geo.admin.ch/rest/services/api/SearchServer?lang=" + searchLanguage + "&type=" + searchType + "&searchText="
-        else: 
-            suggestUrl = "http://api3.geo.admin.ch/rest/services/ech/SearchServer?type=" + searchType + "&searchText="            
+        elif searchType == "location":
+            suggestUrl = "http://api3.geo.admin.ch/rest/services/ech/SearchServer?type=" + searchType + "&searchText="         
+        elif searchType == "featuresearch":
+            print "featuresearch"
+            featureLayerNames = ','.join(self.geoadminLayers)            
+            suggestUrl = "http://api3.geo.admin.ch/rest/services/ech/SearchServer?features=" + featureLayerNames + "&type=" + searchType + "&searchText=" 
+            print suggestUrl
+            
+            
+            return
+         
         
         print suggestUrl
         
@@ -180,8 +223,6 @@ class SuggestCompletion(QLineEdit, QWidget):
         url = str(suggestUrl) + searchString
         if originPrefix <> "":
             url += "&origins=" + originPrefix.strip()
-
-        print url
 
         request = QNetworkRequest(QUrl(url))
         for header in headers:

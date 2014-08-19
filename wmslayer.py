@@ -7,8 +7,6 @@ from PyQt4.QtNetwork import QNetworkReply
 from qgis.core import *
 from qgis.gui import *
 
-from layernotfoundexception import LayerNotFoundException
-
 import json
 import sys
 import traceback
@@ -23,37 +21,34 @@ except AttributeError:
         return QApplication.translate(context, text, disambig)
 
 class WmsLayer(QObject):
-    def __init__(self, iface, data):
+    def __init__(self, iface, data, fallback = False):
         QObject.__init__(self)
         
         self.iface = iface
         self.canvas = self.iface.mapCanvas()
+        self.fallback = fallback
         
         self.MAPSERVER_URL = "https://api3.geo.admin.ch/rest/services/api/MapServer"
         
         self.settings = QSettings("CatAIS","GeoAdminSearch")
         searchLanguage = self.settings.value("options/language", "de")
-        
-        layerName = data['layer']
+        self.userName = self.settings.value("options/username", "")
+        self.password = self.settings.value("options/password", "")
+
+        self.layerName = data['layer']
         
         url = self.MAPSERVER_URL + "?searchText="
-        url += layerName.strip()
+        url += self.layerName.strip()
         url += "&lang=" + searchLanguage
-        
-        print url
 
         # It does not work:
         # a) when networkAccess is not 'self'
         # b) without lambda
         self.networkAccess = QNetworkAccessManager()         
         self.connect(self.networkAccess, SIGNAL("finished(QNetworkReply*)"), lambda event, data=data: self.receiveLayerMetadata(event, data))
-#        networkAccess.finished.connect(self.receiveLayerMetadata)        
         self.networkAccess.get(QNetworkRequest(QUrl(url)))   
 
     def receiveLayerMetadata(self, networkReply, data):
-        print "foo"
-        layerName = data['layer']
-
         bytes = networkReply.readAll()
         response = str(bytes)
         
@@ -63,22 +58,53 @@ class WmsLayer(QObject):
             exc_type, exc_value, exc_traceback = sys.exc_info()
             self.iface.messageBar().pushMessage("Error",  _translate("GeoAdminSearch", "Failed to load json response. ",  None) + str(traceback.format_exc(exc_traceback)), level=QgsMessageBar.CRITICAL, duration=5)      
             return
-     
-#        try:
-        attrs = json_response['layers'][0]['attributes']
-        wmsUrlResource = attrs['wmsUrlResource']
-        wmsUrl = wmsUrlResource.split('?')[0]
-#        except:
-#            self.iface.messageBar().pushMessage("Warning",  _translate("GeoAdminSearch", "WMS layer not found. Will try to add it as WMTS layer.",  None), level=QgsMessageBar.WARNING, duration=5)  
-#            raise LayerNotFoundException
-#            if self.attempts == 0:
-#                self.processWMTSLayer(data)
-#                self.attempts += 1
-#            return
+            
+        try:
+            attrs = json_response['layers'][0]['attributes']
+            wmsUrlResource = attrs['wmsUrlResource']
+            wmsUrl = wmsUrlResource.split('?')[0]
+        except:
+            if not self.fallback:
+                self.iface.messageBar().pushMessage("Warning",  _translate("GeoAdminSearch", "WMS layer not found. Will try to add it as WMTS layer.",  None), level=QgsMessageBar.WARNING, duration=5)                      
+                self.emit(SIGNAL("wmsLayerNotFound(QVariant, QString)"), data, "WMTS")
+                return
+            else:
+                self.iface.messageBar().pushMessage("Error",  _translate("GeoAdminSearch", "Not able to add WMS or WMTS layer.",  None), level=QgsMessageBar.CRITICAL, duration=5)                                      
+                return
+            
+        # this is unstable (sometimes)?! QGIS? WMS-Server?
+        auth = False
+        if wmsUrl.find('httpauth') > 0:
+            auth = True
+            if self.userName == "" or self.password == "":
+                self.iface.messageBar().pushMessage("Error",  _translate("GeoAdminSearch", "WMS server needs authentification. Please set username and password.",  None), level=QgsMessageBar.CRITICAL, duration=5)      
+                return
+            
+        layer = json_response['layers'][0]['layerBodId']
+        fullLayerName = json_response['layers'][0]['fullName']
+ 
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            self.addWmsLayer(layer, fullLayerName, wmsUrl, auth)
+        except:
+            QApplication.restoreOverrideCursor()            
+        QApplication.restoreOverrideCursor()      
 
+    def addWmsLayer(self, layer, fullLayerName, wmsUrl, auth):        
+        crs = self.iface.mapCanvas().mapSettings().destinationCrs().authid()
+
+        uri = "IgnoreGetMapUrl=1&crs="+str(crs)+"&layers="+layer+"&styles=&format=image/png&url="+wmsUrl
         
-
-
-
-    def test(self):
-        raise LayerNotFoundException
+        if auth:
+            uri += "&username="+self.userName+"&password="+self.password
+    
+        wmsLayer = QgsRasterLayer (uri, fullLayerName, "wms", False) 
+        
+        if not wmsLayer.isValid():                
+            self.iface.messageBar().pushMessage("Error",  _translate("GeoAdminSearch", "Layer is not valid.",  None), level=QgsMessageBar.CRITICAL, duration=5)                                                            
+            return       
+        else:
+            root = QgsProject.instance().layerTreeRoot()
+            QgsMapLayerRegistry.instance().addMapLayer(wmsLayer, False) 
+            wmsLayerNode = root.addLayer(wmsLayer)
+            wmsLayerNode.setExpanded(False)                     
