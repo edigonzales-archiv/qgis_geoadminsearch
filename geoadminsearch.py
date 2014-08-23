@@ -147,7 +147,7 @@ class GeoAdminSearch:
         self.processLocation(data) # vertex marker
         
     def processLayer(self, data):
-        preferredProvider = self.settings.value("options/provider", "WMTS")
+        preferredProvider = self.settings.value("options/provider", "WMS")
         
         if preferredProvider == "WMTS":
             crs = self.iface.mapCanvas().mapSettings().destinationCrs().authid()   # hardcoded

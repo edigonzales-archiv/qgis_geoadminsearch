@@ -58,7 +58,7 @@ class GasSettingsDialog(QDialog, Ui_Settings):
         self.comboBoxProvider.insertItem(self.comboBoxProvider.count(),  _translate("GeoAdminSearch", "WMS", None), "WMS")
         self.comboBoxProvider.insertItem(self.comboBoxProvider.count(),  _translate("GeoAdminSearch", "WMTS", None), "WMTS")
 
-        provider = self.settings.value("options/provider", "WMTS")
+        provider = self.settings.value("options/provider", "WMS")
         idx = self.comboBoxProvider.findData(provider)
         self.comboBoxProvider.setCurrentIndex(idx)
 

@@ -124,7 +124,10 @@ class GasWmtsLayer(QObject):
                         
             layerName = data['label'].replace('<b>', '').replace('</b>', '')
             
-            uri = "crs=EPSG:21781&dpiMode=7&featureCount=10&format="+format+"&layers="+identifier+"&referer="+referer+"&styles=&tileDimensions=Time%3D"+time+"&tileMatrixSet="+tileMatrixSet+"&url=" + self.wmtsCapabilitities
+            if referer == "":
+                uri = "crs=EPSG:21781&dpiMode=7&featureCount=10&format="+format+"&layers="+identifier+"&styles=&tileDimensions=Time%3D"+time+"&tileMatrixSet="+tileMatrixSet+"&url=" + self.wmtsCapabilitities
+            else:
+                uri = "crs=EPSG:21781&dpiMode=7&featureCount=10&format="+format+"&layers="+identifier+"&referer="+referer+"&styles=&tileDimensions=Time%3D"+time+"&tileMatrixSet="+tileMatrixSet+"&url=" + self.wmtsCapabilitities
             wmtsLayer = QgsRasterLayer (uri, layerName, "wms", False)      
             self.emit(SIGNAL("layerCreated(QgsMapLayer)"), wmtsLayer)
 
