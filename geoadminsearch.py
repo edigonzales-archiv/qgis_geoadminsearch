@@ -19,7 +19,6 @@
  *                                                                         *
  ***************************************************************************/
 """
-# Import the PyQt and QGIS libraries
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from PyQt4.QtWebKit import *
@@ -28,16 +27,17 @@ from PyQt4.QtNetwork import QNetworkRequest
 from qgis.core import *
 from qgis.gui import *
 
-from settingsdialog import SettingsDialog
-from suggestcompletion import SuggestCompletion
-from wmslayer import WmsLayer
-from wmtslayer import WmtsLayer
-from featuresearch import FeatureSearch
+from gassettingsdialog import GasSettingsDialog
+from gassuggestcompletion import GasSuggestCompletion
+from gaswmslayer import GasWmsLayer
+from gaswmtslayer import GasWmtsLayer
+from gashtmlpopup import GasHtmlPopup
 
 import json
 import sys
 import traceback
 import collections
+import math
 
 import resources_rc
 
@@ -73,12 +73,9 @@ class GeoAdminSearch:
                 QCoreApplication.installTranslator(self.translator)
 
         # settings dialog
-        self.dlg = SettingsDialog(self.canvas)
+        self.dlg = GasSettingsDialog(self.canvas)
         self.dlg.initGui()
-        
-        # origins mapping dictionary
-        self.originsMap = {'zipcode':'locations', 'gg25':'locations', 'district':'locations', 'kantone':'locations', 'sn25':'locations', 'address':'locations', 'parcel':'locations', 'layer':'layers'}
-    
+            
         # VertexMarker
         self.marker = None
         
@@ -95,7 +92,7 @@ class GeoAdminSearch:
         toolBarLayout = QHBoxLayout(emptyWidget)
         toolBarLayout.setMargin(2)
         
-        self.suggest = SuggestCompletion(self.iface, emptyWidget)
+        self.suggest = GasSuggestCompletion(self.iface, emptyWidget)
         self.suggest.setMinimumWidth(600);
         toolBarLayout.addWidget(self.suggest)
         
@@ -143,11 +140,11 @@ class GeoAdminSearch:
         self.suggest.preventRequest()                    
         
     def processFeatureSearch(self, data):
-        featureSearch = FeatureSearch(self.iface, data)
+        htmlpopup = GasHtmlPopup(self.iface, data)
+        htmlpopup.resize(450,300);     
+        htmlpopup.show()
         
-        
-        
-        # vertex marker here
+        self.processLocation(data) # vertex marker
         
     def processLayer(self, data):
         preferredProvider = self.settings.value("options/provider", "WMTS")
@@ -158,58 +155,79 @@ class GeoAdminSearch:
                 self.iface.messageBar().pushMessage("Warning",  _translate("GeoAdminSearch", "Only EPSG:21781 tiles are available. ",  None) + str(traceback.format_exc(exc_traceback)), level=QgsMessageBar.WARNING, duration=10)      
                 return
                 
-            wmtsLayer = WmtsLayer(self.iface, data)
-            QObject.connect(wmtsLayer, SIGNAL("wmtsLayerNotFound(QVariant, QString)"), self.processFallback)
-            
-        elif preferredProvider == "WMS":
-            wmsLayer = WmsLayer(self.iface, data)
-            QObject.connect(wmsLayer, SIGNAL("wmsLayerNotFound(QVariant, QString)"), self.processFallback)
+            myLayer = GasWmtsLayer(self.iface, data)
+            QObject.connect(myLayer, SIGNAL("wmtsLayerNotFound(QVariant, QString)"), self.processFallback)
+            QObject.connect(myLayer, SIGNAL("layerCreated(QgsMapLayer)"), self.addLayerToCanvas)
     
+        elif preferredProvider == "WMS":
+            myLayer = GasWmsLayer(self.iface, data)
+            QObject.connect(myLayer, SIGNAL("wmsLayerNotFound(QVariant, QString)"), self.processFallback)
+            QObject.connect(myLayer, SIGNAL("layerCreated(QgsMapLayer)"), self.addLayerToCanvas)
+
     def processFallback(self, data, fallbackProvider):
         if fallbackProvider == "WMTS":
-            wmtsLayer = WmtsLayer(self.iface, data, True)
+            myLayer = GasWmtsLayer(self.iface, data, True)
+            QObject.connect(myLayer, SIGNAL("layerCreated(QgsMapLayer)"), self.addLayerToCanvas)
+          
         elif fallbackProvider == "WMS":
-            wmsLayer = WmsLayer(self.iface, data, True)
-        
-    def processLocation(self, data):
-        bbox = data['geom_st_box2d']
-        coords = bbox[4:-1].split(',')
-        
-        min = coords[0].split(' ')
-        xmin = min[0]
-        ymin = min[1]
-        
-        max = coords[1].split(' ')
-        xmax = max[0]        
-        ymax = max[1]
-        
-        if xmin == xmax or ymin == ymax:
-            point = QgsPoint(float(xmin), float(ymin))
-            geom = QgsGeometry().fromPoint(point)
-        
-            # create a marker only for point objects 
-            # since we only get the bbox and not the
-            # real geometry for polygons
-            self.canvas.scene().removeItem(self.marker)  
+            myLayer = GasWmsLayer(self.iface, data, True)
+            QObject.connect(myLayer, SIGNAL("layerCreated(QgsMapLayer)"), self.addLayerToCanvas)
 
-            self.marker = QgsVertexMarker(self.iface.mapCanvas())
-            self.marker.setIconType(3)
-            self.marker.setColor(QColor(255,0,0))
-            self.marker.setIconSize(20)
-            self.marker.setPenWidth (3)
-            self.marker.setCenter(geom.asPoint())
-            
+    def addLayerToCanvas(self, layer):
+        if not layer.isValid():                
+            self.iface.messageBar().pushMessage("Error",  _translate("GeoAdminSearch", "Layer is not valid.",  None), level=QgsMessageBar.CRITICAL, duration=5)                                                            
+            return       
         else:
-            rect = QgsRectangle(float(xmin), float(ymin), float(xmax), float(ymax))
-            rect.scale(1.2)
-            geom = QgsGeometry().fromRect(rect)
+            root = QgsProject.instance().layerTreeRoot()
+            QgsMapLayerRegistry.instance().addMapLayer(layer, False) 
+            layerNode = root.addLayer(layer)
+            layerNode.setExpanded(False)                     
 
-        bbox = geom.boundingBox() 
-        self.iface.mapCanvas().setExtent(bbox)
-        self.iface.mapCanvas().refresh() 
+    def processLocation(self, data):
+        try:
+            bbox = data['geom_st_box2d']
+            coords = bbox[4:-1].split(',')
+            
+            min = coords[0].split(' ')
+            xmin = min[0]
+            ymin = min[1]
+            
+            max = coords[1].split(' ')
+            xmax = max[0]        
+            ymax = max[1]
+            
+            # some bbox are really small -> do not make sense (e.g. lfp2)
+            # use some tolerance...
+            if abs(float(xmax) - float(xmin)) < 1 or abs(float(xmax) - float(xmin)) < 1:
+                point = QgsPoint(float(xmin), float(ymin))
+                geom = QgsGeometry().fromPoint(point)
+            
+                # create a marker only for point objects 
+                # since we only get the bbox and not the
+                # real geometry for polygons
+                self.canvas.scene().removeItem(self.marker)  
+
+                self.marker = QgsVertexMarker(self.iface.mapCanvas())
+                self.marker.setIconType(3)
+                self.marker.setColor(QColor(255,0,0))
+                self.marker.setIconSize(20)
+                self.marker.setPenWidth (3)
+                self.marker.setCenter(geom.asPoint())
                 
+            else:
+                rect = QgsRectangle(float(xmin), float(ymin), float(xmax), float(ymax))
+                rect.scale(1.2)
+                geom = QgsGeometry().fromRect(rect)
+
+            bbox = geom.boundingBox() 
+            self.iface.mapCanvas().setExtent(bbox)
+            self.iface.mapCanvas().refresh() 
+        except Exception:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            print str(traceback.format_exc(exc_traceback))
+
     def unload(self):
-        self.iface.removePluginMenu(u"&Sogis Suche", self.action)
+        self.iface.removePluginMenu(u"&GeoAdmin Search", self.action)
         self.iface.removeToolBarIcon(self.action)
         
         self.iface.mainWindow().removeToolBar(self.toolBar)

@@ -20,7 +20,7 @@ except AttributeError:
     def _translate(context, text, disambig):
         return QApplication.translate(context, text, disambig)
 
-class WmsLayer(QObject):
+class GasWmsLayer(QObject):
     def __init__(self, iface, data, fallback = False):
         QObject.__init__(self)
         
@@ -28,7 +28,9 @@ class WmsLayer(QObject):
         self.canvas = self.iface.mapCanvas()
         self.fallback = fallback
         
-        self.MAPSERVER_URL = "https://api3.geo.admin.ch/rest/services/api/MapServer"
+        self.settings = QSettings("CatAIS","GeoAdminSearch")
+
+        mapServer = self.settings.value("services/mapserver", "https://api3.geo.admin.ch/rest/services/api/MapServer")
         
         self.settings = QSettings("CatAIS","GeoAdminSearch")
         searchLanguage = self.settings.value("options/language", "de")
@@ -37,7 +39,7 @@ class WmsLayer(QObject):
 
         self.layerName = data['layer']
         
-        url = self.MAPSERVER_URL + "?searchText="
+        url = mapServer + "?searchText="
         url += self.layerName.strip()
         url += "&lang=" + searchLanguage
 
@@ -51,7 +53,7 @@ class WmsLayer(QObject):
     def receiveLayerMetadata(self, networkReply, data):
         bytes = networkReply.readAll()
         response = str(bytes)
-        
+                
         try:
             json_response = json.loads(unicode(response), object_pairs_hook=collections.OrderedDict) 
         except Exception:
@@ -83,28 +85,18 @@ class WmsLayer(QObject):
         layer = json_response['layers'][0]['layerBodId']
         fullLayerName = json_response['layers'][0]['fullName']
  
+ 
         QApplication.setOverrideCursor(Qt.WaitCursor)
-        try:
-            self.addWmsLayer(layer, fullLayerName, wmsUrl, auth)
+        try:            
+            crs = self.iface.mapCanvas().mapSettings().destinationCrs().authid()
+            uri = "IgnoreGetMapUrl=1&crs="+str(crs)+"&layers="+layer+"&styles=&format=image/png&url="+wmsUrl
+            
+            if auth:
+                uri += "&username="+self.userName+"&password="+self.password
+
+            wmsLayer = QgsRasterLayer(uri, fullLayerName, "wms", False) 
+            self.emit(SIGNAL("layerCreated(QgsMapLayer)"), wmsLayer)
+            
         except:
             QApplication.restoreOverrideCursor()            
         QApplication.restoreOverrideCursor()      
-
-    def addWmsLayer(self, layer, fullLayerName, wmsUrl, auth):        
-        crs = self.iface.mapCanvas().mapSettings().destinationCrs().authid()
-
-        uri = "IgnoreGetMapUrl=1&crs="+str(crs)+"&layers="+layer+"&styles=&format=image/png&url="+wmsUrl
-        
-        if auth:
-            uri += "&username="+self.userName+"&password="+self.password
-    
-        wmsLayer = QgsRasterLayer (uri, fullLayerName, "wms", False) 
-        
-        if not wmsLayer.isValid():                
-            self.iface.messageBar().pushMessage("Error",  _translate("GeoAdminSearch", "Layer is not valid.",  None), level=QgsMessageBar.CRITICAL, duration=5)                                                            
-            return       
-        else:
-            root = QgsProject.instance().layerTreeRoot()
-            QgsMapLayerRegistry.instance().addMapLayer(wmsLayer, False) 
-            wmsLayerNode = root.addLayer(wmsLayer)
-            wmsLayerNode.setExpanded(False)                     

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# Import the PyQt and the QGIS libraries
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from PyQt4.QtNetwork import QNetworkAccessManager
@@ -15,6 +14,8 @@ import collections
 
 from collections import OrderedDict
 
+from gascapabilities import GasCapabilities
+
 try:
     _encoding = QApplication.UnicodeUTF8
     def _translate(context, text, disambig):
@@ -23,7 +24,7 @@ except AttributeError:
     def _translate(context, text, disambig):
         return QApplication.translate(context, text, disambig)
 
-class SuggestCompletion(QLineEdit, QWidget):
+class GasSuggestCompletion(QLineEdit, QWidget):
     def __init__(self, iface, parent):
         QLineEdit.__init__(self, parent)
         
@@ -37,40 +38,6 @@ class SuggestCompletion(QLineEdit, QWidget):
             'sn25': _translate("GeoAdminSearch", "Named location",  None), 'address': _translate("GeoAdminSearch", "Address",  None),
             'parcel': _translate("GeoAdminSearch", "Parcel",  None), 'layer': _translate("GeoAdminSearch", "Layer",  None), 
             'feature': _translate("GeoAdminSearch", "Feature",  None)}
-            
-        self.searchableLayers = [
-            'ch.swisstopo.verschiebungsvektoren-tsp2',
-            'ch.swisstopo.verschiebungsvektoren-tsp1',
-            'ch.swisstopo.swissboundaries3d-kanton-flaeche.fill',
-            'ch.swisstopo.lubis-luftbilder_infrarot',
-            'ch.astra.strassenverkehrszaehlung_messstellen-uebergeordnet',
-            'ch.bafu.hydrologie-wassertemperaturmessstationen',
-            'ch.swisstopo.lubis-bildstreifen',
-            'ch.bazl.sicherheitszonenplan',
-            'ch.swisstopo.lubis-luftbilder-dritte-kantone',
-            'ch.astra.strassenverkehrszaehlung_messstellen-regional_lokal',
-            'ch.swisstopo.fixpunkte-hfp1',
-            'ch.babs.kulturgueter',
-            'ch.swisstopo.lubis-luftbilder_schwarzweiss',
-            'ch.bakom.versorgungsgebiet-tv',
-            'ch.swisstopo.geologie-gravimetrischer_atlas.metadata',
-            'ch.bafu.hydrologie-gewaesserzustandsmessstationen',
-            'ch.astra.ivs-nat',
-            'ch.astra.ivs-reg_loc',
-            'ch.bav.sachplan-infrastruktur-schiene_kraft',
-            'ch.swisstopo.lubis-luftbilder_farbe',
-            'ch.bfs.gebaeude_wohnungs_register',
-            'ch.swisstopo.swissboundaries3d-bezirk-flaeche.fill',
-            'ch.swisstopo.fixpunkte-lfp1',
-            'ch.swisstopo.fixpunkte-lfp2',
-            'ch.swisstopo.lubis-luftbilder-dritte-firmen',
-            'ch.swisstopo.vec200-names-namedlocation',
-            'ch.swisstopo-vd.ortschaftenverzeichnis_plz',
-            'ch.astra.ivs-nat-verlaeufe',
-            'ch.swisstopo.swissboundaries3d-gemeinde-flaeche.fill',
-            'ch.bakom.versorgungsgebiet-ukw',
-            'ch.bakom.radio-fernsehsender',
-            'ch.swisstopo.fixpunkte-hfp2']            
             
         self.geoadminLayers = []
         
@@ -92,8 +59,7 @@ class SuggestCompletion(QLineEdit, QWidget):
         
         self.popup.installEventFilter(self)
                 
-        # for the MousePressEvent
-        self.connect(self.popup, SIGNAL("itemClicked(QTreeWidgetItem*, int)"), self.doneCompletion)
+        self.connect(self.popup, SIGNAL("itemClicked(QTreeWidgetItem*, int)"), self.doneCompletion) # for mouse event
         
         self.timer = QTimer(self)
         self.timer.setSingleShot(True);
@@ -125,7 +91,8 @@ class SuggestCompletion(QLineEdit, QWidget):
 
                 if wmsUrl.find('swisstopo.admin.ch') > 0 or wmsUrl.find('geo.admin.ch') > 0:
                     for layer in layers:
-                        if layer in self.searchableLayers:
+                        
+                        if GasCapabilities.isSearchable(layer):
                             self.geoadminLayers.append(layer)
 
     def updateRemoveLayerList(self, id):
@@ -137,20 +104,21 @@ class SuggestCompletion(QLineEdit, QWidget):
     def eventFilter(self, obj, ev):
         try:
             if obj != self.popup:
-                print "obj != self.popup"
                 return False
     
+            if ev.type() ==  QEvent.MouseButtonPress:
+                self.setFocus()
+                self.popup.hide()
+                pass
+     
             if ev.type() == QEvent.KeyPress:
                 consumed = False
                 key = int(ev.key())
-                print "QEvent.KeyPress"
                 
                 if key == Qt.Key_Enter or key == Qt.Key_Return:
-                    print "Key_Enter/Key_Return"
                     self.doneCompletion()
                     consumed = True
                 elif key == Qt.Key_Escape:
-                    print "Key_Escape"
                     self.setFocus()
                     self.popup.hide()
                     consumed = True
@@ -166,7 +134,6 @@ class SuggestCompletion(QLineEdit, QWidget):
             return False
         except:
             # underlying C++ ..... ???
-            print "underlying..."
             return False
 
     def showCompletion(self, displaytext, layername, origin, data):        
@@ -202,7 +169,6 @@ class SuggestCompletion(QLineEdit, QWidget):
         self.popup.resize(self.width(), h)
         
         self.popup.move(self.mapToGlobal(QPoint(0, self.height())))
-#        self.popup.setFocus()
         self.popup.show()
         self.setFocus()
 
@@ -218,20 +184,18 @@ class SuggestCompletion(QLineEdit, QWidget):
         
     def autoSuggest(self):
         # search type, language and search url
+        searchServer = self.settings.value("services/searchserver", "https://api3.geo.admin.ch/rest/services/api/SearchServer")        
         searchType = self.settings.value("searchtype", "locations")
         searchLanguage = self.settings.value("options/language", "de")
 
         if searchType == "layers":
-            suggestUrl = "http://api3.geo.admin.ch/rest/services/api/SearchServer?lang=" + searchLanguage + "&type=" + searchType + "&searchText="
+            suggestUrl = searchServer + "?lang=" + searchLanguage + "&type=" + searchType + "&searchText="
         elif searchType == "locations":
-            suggestUrl = "http://api3.geo.admin.ch/rest/services/ech/SearchServer?type=" + searchType + "&searchText="         
+            suggestUrl = searchServer + "?type=" + searchType + "&searchText="         
         elif searchType == "featuresearch":
-            print "featuresearch"
             featureLayerNames = ','.join(self.geoadminLayers)            
-            suggestUrl = "http://api3.geo.admin.ch/rest/services/ech/SearchServer?features=" + featureLayerNames + "&type=" + searchType + "&searchText=" 
-        
-        print suggestUrl
-        
+            suggestUrl = searchServer + "?features=" + featureLayerNames + "&type=" + searchType + "&searchText=" 
+    
         # http headers
         headerFields = self.settings.value("options/headerfields")
         headerValues = self.settings.value("options/headervalues")
@@ -327,8 +291,6 @@ class SuggestCompletion(QLineEdit, QWidget):
 
                     data.append(attrs)
 
-                    
-            
             self.showCompletion(displaytext, layername, type, data)
         networkReply.deleteLater()
 

@@ -20,7 +20,7 @@ except AttributeError:
     def _translate(context, text, disambig):
         return QApplication.translate(context, text, disambig)
 
-class WmtsLayer(QObject):
+class GasWmtsLayer(QObject):
     def __init__(self, iface, data, fallback = False):
         QObject.__init__(self)
         
@@ -28,7 +28,9 @@ class WmtsLayer(QObject):
         self.canvas = self.iface.mapCanvas()
         self.fallback = fallback
         
-        self.WMTS_URL = "http://api3.geo.admin.ch/rest/services/ech/1.0.0/WMTSCapabilities.xml"
+        self.settings = QSettings("CatAIS","GeoAdminSearch")
+        
+        self.wmtsCapabilitities = self.settings.value("services/wmtscapabilities", "http://api3.geo.admin.ch/rest/services/api/1.0.0/WMTSCapabilities.xml")
         
         self.settings = QSettings("CatAIS","GeoAdminSearch")
         searchLanguage = self.settings.value("options/language", "de")
@@ -37,7 +39,7 @@ class WmtsLayer(QObject):
 
         self.layerName = data['layer']
         
-        url = self.WMTS_URL
+        url = self.wmtsCapabilitities
 
         # It does not work:
         # a) when networkAccess is not 'self'
@@ -112,30 +114,23 @@ class WmtsLayer(QObject):
 
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
-            self.addWmtsLayer(identifier, format, time, tileMatrixSet, data)
+            headerFields = self.settings.value("options/headerfields")
+            headerValues = self.settings.value("options/headervalues")
+            referer =""
+            if headerFields and headerValues:
+                for i in range(len(headerFields)):
+                    if headerFields[i] == "Referer":
+                        referer = headerValues[i]
+                        
+            layerName = data['label'].replace('<b>', '').replace('</b>', '')
+            
+            uri = "crs=EPSG:21781&dpiMode=7&featureCount=10&format="+format+"&layers="+identifier+"&referer="+referer+"&styles=&tileDimensions=Time%3D"+time+"&tileMatrixSet="+tileMatrixSet+"&url=" + self.wmtsCapabilitities
+            wmtsLayer = QgsRasterLayer (uri, layerName, "wms", False)      
+            self.emit(SIGNAL("layerCreated(QgsMapLayer)"), wmtsLayer)
+
         except:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            print str(traceback.format_exc(exc_traceback))
+            
             QApplication.restoreOverrideCursor()            
         QApplication.restoreOverrideCursor()      
-
-    def addWmtsLayer(self, identifier, format, time, tileMatrixSet, data):
-        headerFields = self.settings.value("options/headerfields")
-        headerValues = self.settings.value("options/headervalues")
-        referer =""
-        if headerFields and headerValues:
-            for i in range(len(headerFields)):
-                if headerFields[i] == "Referer":
-                    referer = headerValues[i]
-                    
-        layerName = data['label'].replace('<b>', '').replace('</b>', '')
-        
-        uri = "crs=EPSG:21781&dpiMode=7&featureCount=10&format="+format+"&layers="+identifier+"&referer="+referer+"&styles=&tileDimensions=Time%3D"+time+"&tileMatrixSet="+tileMatrixSet+"&url=" + self.WMTS_URL
-        wmtsLayer = QgsRasterLayer (uri, layerName, "wms", False)      
-
-        if not wmtsLayer.isValid():                
-            self.iface.messageBar().pushMessage("Error",  _translate("GeoAdminSearch", "WMTS layer is not valid.",  None), level=QgsMessageBar.CRITICAL, duration=5)                                                            
-            return       
-        else:
-                root = QgsProject.instance().layerTreeRoot()
-                QgsMapLayerRegistry.instance().addMapLayer(wmtsLayer, False) 
-                wmsLayerNode = root.addLayer(wmtsLayer)
-                wmsLayerNode.setExpanded(False)                     

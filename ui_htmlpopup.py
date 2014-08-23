@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui_htmlpopup.ui'
 #
-# Created: Tue Aug 19 22:10:31 2014
+# Created: Sat Aug 23 17:34:07 2014
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -29,6 +29,7 @@ class Ui_HtmlPopup(object):
         HtmlPopup.setWindowModality(QtCore.Qt.NonModal)
         HtmlPopup.resize(517, 327)
         self.gridLayout = QtGui.QGridLayout(HtmlPopup)
+        self.gridLayout.setMargin(0)
         self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
         self.webView = QtWebKit.QWebView(HtmlPopup)
         self.webView.setProperty("url", QtCore.QUrl(_fromUtf8("about:blank")))

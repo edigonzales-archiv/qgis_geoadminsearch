@@ -34,7 +34,7 @@ except AttributeError:
     def _translate(context, text, disambig):
         return QApplication.translate(context, text, disambig)
 
-class SettingsDialog(QDialog, Ui_Settings):
+class GasSettingsDialog(QDialog, Ui_Settings):
     def __init__(self, parent):
         QDialog.__init__(self, parent)
         self.setupUi(self)
@@ -62,8 +62,19 @@ class SettingsDialog(QDialog, Ui_Settings):
         idx = self.comboBoxProvider.findData(provider)
         self.comboBoxProvider.setCurrentIndex(idx)
 
+        QWidget.setTabOrder(self.lineEditSearchServer, self.lineEditMapServer)
+        QWidget.setTabOrder(self.lineEditMapServer, self.lineEditWmts)
+
+        searchServer = self.settings.value("services/searchserver", "https://api3.geo.admin.ch/rest/services/api/SearchServer")
+        mapServer = self.settings.value("services/mapserver", "https://api3.geo.admin.ch/rest/services/api/MapServer")
+        wmtsCapabilitities = self.settings.value("services/wmtscapabilities", "http://api3.geo.admin.ch/rest/services/api/1.0.0/WMTSCapabilities.xml")
+
+        self.lineEditSearchServer.setText(searchServer) 
+        self.lineEditMapServer.setText(mapServer) 
+        self.lineEditWmts.setText(wmtsCapabilitities) 
+
         QWidget.setTabOrder(self.lineEditUserName, self.lineEditPassword)
-                
+
         userName = self.settings.value("options/username")
         password = self.settings.value("options/password")
         self.lineEditUserName.setText(userName) 
@@ -101,6 +112,14 @@ class SettingsDialog(QDialog, Ui_Settings):
         idx = self.comboBoxProvider.currentIndex()
         provider = self.comboBoxProvider.itemData(idx)
         self.settings.setValue("options/provider", provider)
+        
+        searchServer =  self.lineEditSearchServer.text()
+        mapServer =  self.lineEditMapServer.text()
+        wmtsCapabilities =  self.lineEditWmts.text()
+        
+        self.settings.setValue("services/searchserver", searchServer)
+        self.settings.setValue("services/mapserver", mapServer)
+        self.settings.setValue("services/wmtscapabilities", wmtsCapabilities)
         
         userName = self.lineEditUserName.text()
         password = self.lineEditPassword.text()
